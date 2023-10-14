@@ -1,0 +1,10 @@
+---
+# net_iface_cidr: "192.168.18.2/24"
+net_iface_cidr: "69.69.69.2/24"
+interface: "butt"
+# listen-port: "69"
+
+# IPs who can talk on the network
+# Array of key:value pairs. The key is another address on the VPN, the value is the real address:port.
+# mates:
+# - "192.168.18.1": "192.168.2.53:8080"
