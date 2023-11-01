@@ -10,7 +10,6 @@ import (
 
 	"github.com/songgao/water"
 	"golang.org/x/net/ipv4"
-	// ""
 )
 
 type Packet struct {
@@ -22,47 +21,10 @@ const (
   maxIPPacketSize = 65535
 )
 
-func computeUDPChecksum(src, dst net.IP, udpHeader, udpPayload []byte) uint16 {
-    udpLength := uint16(len(udpHeader) + len(udpPayload))
-
-    var sum uint32
-
-    // Sum pseudo-header
-    pseudoHeader := []byte{
-        src.To4()[0], src.To4()[1], src.To4()[2], src.To4()[3],
-        dst.To4()[0], dst.To4()[1], dst.To4()[2], dst.To4()[3],
-        0, 17,
-        byte(udpLength >> 8), byte(udpLength),
-    }
-    for i := 0; i < len(pseudoHeader); i += 2 {
-        sum += uint32(pseudoHeader[i])<<8 | uint32(pseudoHeader[i+1])
-    }
-
-    // Sum UDP header
-    for i := 0; i < len(udpHeader); i += 2 {
-        sum += uint32(udpHeader[i])<<8 | uint32(udpHeader[i+1])
-    }
-
-    // Sum UDP payload
-    for i := 0; i < len(udpPayload); i += 2 {
-        if i == len(udpPayload)-1 {
-            sum += uint32(udpPayload[i]) << 8 // If odd number of bytes, pad with zero
-        } else {
-            sum += uint32(udpPayload[i])<<8 | uint32(udpPayload[i+1])
-        }
-    }
-
-    // Finalize checksum calculation
-    for sum>>16 != 0 {
-        sum = (sum & 0xFFFF) + (sum >> 16)
-    }
-    return ^uint16(sum)
-}
 func onesComplementAdd(a, b uint32) uint32 {
   sum := a + b
   return sum + (sum >> 16)
 }
-
 
 // Fix UDP checksum which is for some reason based on src and dest IP addresses
 // from the IP packet header even though UDP is layer 4...
