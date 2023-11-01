@@ -3,6 +3,7 @@ package ppanic
 import (
 	"errors"
 	"fmt"
+	"math/rand"
 	"net"
 	"time"
 
@@ -20,6 +21,43 @@ type Packet struct {
 const (
   maxIPPacketSize = 65535
 )
+
+func computeUDPChecksum(src, dst net.IP, udpHeader, udpPayload []byte) uint16 {
+    udpLength := uint16(len(udpHeader) + len(udpPayload))
+
+    var sum uint32
+
+    // Sum pseudo-header
+    pseudoHeader := []byte{
+        src.To4()[0], src.To4()[1], src.To4()[2], src.To4()[3],
+        dst.To4()[0], dst.To4()[1], dst.To4()[2], dst.To4()[3],
+        0, 17,
+        byte(udpLength >> 8), byte(udpLength),
+    }
+    for i := 0; i < len(pseudoHeader); i += 2 {
+        sum += uint32(pseudoHeader[i])<<8 | uint32(pseudoHeader[i+1])
+    }
+
+    // Sum UDP header
+    for i := 0; i < len(udpHeader); i += 2 {
+        sum += uint32(udpHeader[i])<<8 | uint32(udpHeader[i+1])
+    }
+
+    // Sum UDP payload
+    for i := 0; i < len(udpPayload); i += 2 {
+        if i == len(udpPayload)-1 {
+            sum += uint32(udpPayload[i]) << 8 // If odd number of bytes, pad with zero
+        } else {
+            sum += uint32(udpPayload[i])<<8 | uint32(udpPayload[i+1])
+        }
+    }
+
+    // Finalize checksum calculation
+    for sum>>16 != 0 {
+        sum = (sum & 0xFFFF) + (sum >> 16)
+    }
+    return ^uint16(sum)
+}
 
 func onesComplementAdd(a, b uint32) uint32 {
   sum := a + b
@@ -52,7 +90,36 @@ func updateChecksumForNewIPs(oldChecksum []byte, oldSrc, oldDst, newSrc, newDst 
   return ^uint16(newChecksum)
 }
 
-func Dispatcher(iface *water.Interface, tun2EthQ chan Packet) error {
+type PacketManipulator interface {
+	Manipulate(packet *Packet)
+}
+
+type Corruptor struct{}
+
+func (c *Corruptor) Manipulate(packet *Packet) {
+	// flip 5 random bits from the packet's payload
+	for i := 0; i < 5; i++ {
+		randByte := rand.Intn(len(packet.payload))
+		randBit := uint(rand.Intn(8))
+		packet.payload[randByte] ^= 1 << randBit
+	}
+}
+
+type Delayer struct {
+	minDelay time.Duration
+	maxDelay time.Duration
+}
+
+func NewDelayer(minDelay, maxDelay time.Duration) *Delayer {
+	return &Delayer{minDelay: minDelay, maxDelay: maxDelay}
+}
+
+func (d *Delayer) Manipulate(packet *Packet) {
+	// randomDelay := d.minDelay + time.Duration(rand.Int63n(int64(d.maxDelay-d.minDelay)))
+	// time.Sleep(randomDelay)
+}
+
+func Dispatcher(iface *water.Interface, tun2EthQ chan Packet, manipulators []PacketManipulator) error {
   buf := make([]byte, maxIPPacketSize)
   for {
     n, err := iface.Read(buf)
@@ -69,6 +136,7 @@ func Dispatcher(iface *water.Interface, tun2EthQ chan Packet) error {
     // byte array to fix use-after-free
     // goroutine on anon func
     go func(buf []byte, n int) {
+      startTime := time.Now()
 
       // get the version xxxx0000 is the version in the first byte
       version := cop[0] >> 4
@@ -81,8 +149,8 @@ func Dispatcher(iface *water.Interface, tun2EthQ chan Packet) error {
         fmt.Printf("Error parsing header")
         return 
       }
-      oldSrc := header.Src
-      oldDst := header.Dst
+      // oldSrc := header.Src
+      // oldDst := header.Dst
       header.Dst = config.Config.OFaceAddr // TODO: return addr table
       header.Src = config.Config.OFaceAddr
       header.TotalLen = len(cop)
@@ -95,7 +163,12 @@ func Dispatcher(iface *water.Interface, tun2EthQ chan Packet) error {
       if (header.Protocol == 17) {
         udpStart := header.Len
         udpHeader := cop[udpStart : udpStart+8] // 8 bytes of UDP header
-        checksum := updateChecksumForNewIPs(udpHeader[6:8], oldSrc, oldDst, header.Src, header.Dst)
+        // checksum := updateChecksumForNewIPs(udpHeader[6:8], oldSrc, oldDst, header.Src, header.Dst)
+        udpPayload := cop[udpStart+8 : n]
+
+        udpHeader[6] = 0
+        udpHeader[7] = 0
+        checksum := computeUDPChecksum(header.Src, header.Dst, udpHeader, udpPayload)
 
         udpHeader[6] = byte(checksum >> 8) // update header w/ new checksum
         udpHeader[7] = byte(checksum & 0xFF)
@@ -107,6 +180,15 @@ func Dispatcher(iface *water.Interface, tun2EthQ chan Packet) error {
         header: header,
         payload: payload,
       }
+
+
+
+      fmt.Printf("b4 manipulating packet %d", startTime.Sub(time.Now()))
+      // Apply manipulations
+			for _, manipulator := range manipulators {
+				manipulator.Manipulate(&packet)
+			}
+      fmt.Printf("after manipulating packet %d", startTime.Sub(time.Now()))
 
       tun2EthQ <- packet
     }(cop, n)

@@ -9,6 +9,7 @@ args = parser.parse_args()
 # Configuration
 UDP_IP = "69.69.69.3"
 UDP_PORT = 8081
+# MESSAGE = b'a' * args.size  # Size specified as a command-line argument
 MESSAGE = b'a' * args.size  # Size specified as a command-line argument
 
 # Display details
