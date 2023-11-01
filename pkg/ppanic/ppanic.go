@@ -22,31 +22,6 @@ const (
   maxIPPacketSize = 65535
 )
 
-// func computeUDPChecksum(src, dst net.IP, udpHeader, udpPayload []byte) uint16 {
-//   pseudoHeader := append(src.To4(), dst.To4()...)
-//   pseudoHeader = append(pseudoHeader, byte(0))
-//   pseudoHeader = append(pseudoHeader, byte(17)) // UDP protocol number
-//   udpLength := uint16(len(udpHeader) + len(udpPayload))
-//   // fmt.Printf("udp len: %d\n", udpLength);
-//   pseudoHeader = append(pseudoHeader, byte(udpLength>>8), byte(udpLength))
-//
-//   buf := append(pseudoHeader, udpHeader...)
-//   buf = append(buf, udpPayload...)
-//
-//   // If the total length is odd, append a zero-byte padding
-//   if len(buf)%2 != 0 {
-//     buf = append(buf, 0)
-//   }
-//
-//   var sum uint32
-//   for i := 0; i < len(buf); i += 2 {
-//     sum += uint32(buf[i])<<8 | uint32(buf[i+1])
-//   }
-//   for sum>>16 != 0 {
-//     sum = (sum & 0xFFFF) + (sum >> 16)
-//   }
-//   return ^uint16(sum)
-//
 func computeUDPChecksum(src, dst net.IP, udpHeader, udpPayload []byte) uint16 {
     udpLength := uint16(len(udpHeader) + len(udpPayload))
 
@@ -89,6 +64,8 @@ func onesComplementAdd(a, b uint32) uint32 {
 }
 
 
+// Fix UDP checksum which is for some reason based on src and dest IP addresses
+// from the IP packet header even though UDP is layer 4...
 func updateChecksumForNewIPs(oldChecksum []byte, oldSrc, oldDst, newSrc, newDst net.IP) uint16 {
     if len(oldChecksum) != 2 {
         panic("Checksum slice should be 2 bytes long")
@@ -146,28 +123,19 @@ func Dispatcher(iface *water.Interface, tun2EthQ chan Packet) error {
       oldDst := header.Dst
       header.Dst = config.Config.OFaceAddr // TODO: return addr table
       header.Src = config.Config.OFaceAddr
-      header.Dst = config.Config.OFaceAddr // TODO: return addr table
       header.TotalLen = len(cop)
       header.Checksum = 0 // checksum is recalculated in the socket write
 
       payload := cop[header.Len:]
 
-      // Check if the protocol is UDP.
+      // Fix UDP checksum which is for some reason based on src and dest IP addresses
+      // from the IP packet header even though UDP is layer 4...
       if (header.Protocol == 17) {
         udpStart := header.Len
-
         udpHeader := cop[udpStart : udpStart+8] // 8 bytes of UDP header
-        // udpPayload := cop[udpStart+8 : n]
-
-        // Zero out the current checksum.
-        udpHeader[6], udpHeader[7] = 0, 0
-        
-        // Calculate the new checksum.
         checksum := updateChecksumForNewIPs(udpHeader[6:8], oldSrc, oldDst, header.Src, header.Dst)
-        // checksum := computeUDPChecksum(header.Src, header.Dst, udpHeader, udpPayload)
-        //
-        // // Insert the new checksum into the UDP header.
-        udpHeader[6] = byte(checksum >> 8)
+
+        udpHeader[6] = byte(checksum >> 8) // update header w/ new checksum
         udpHeader[7] = byte(checksum & 0xFF)
 
       } else {
