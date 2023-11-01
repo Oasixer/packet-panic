@@ -29,27 +29,27 @@ func onesComplementAdd(a, b uint32) uint32 {
 // Fix UDP checksum which is for some reason based on src and dest IP addresses
 // from the IP packet header even though UDP is layer 4...
 func updateChecksumForNewIPs(oldChecksum []byte, oldSrc, oldDst, newSrc, newDst net.IP) uint16 {
-    if len(oldChecksum) != 2 {
-        panic("Checksum slice should be 2 bytes long")
-    }
+  if len(oldChecksum) != 2 {
+    panic("Checksum slice should be 2 bytes long")
+  }
 
-    oldChksum16 := uint16(oldChecksum[0])<<8 | uint16(oldChecksum[1])
-    var diff uint32
+  oldChksum16 := uint16(oldChecksum[0])<<8 | uint16(oldChecksum[1])
+  var diff uint32
 
-    // Subtract effect of old IPs
-    for i := 0; i < 4; i++ {
-        diff = onesComplementAdd(diff, ^uint32(oldSrc[i])<<8 | ^uint32(oldDst[i]))
-    }
+  // Subtract effect of old IPs
+  for i := 0; i < 4; i++ {
+    diff = onesComplementAdd(diff, ^uint32(oldSrc[i])<<8 | ^uint32(oldDst[i]))
+  }
 
-    // Add effect of new IPs
-    for i := 0; i < 4; i++ {
-        diff = onesComplementAdd(diff, uint32(newSrc[i])<<8 | uint32(newDst[i]))
-    }
+  // Add effect of new IPs
+  for i := 0; i < 4; i++ {
+    diff = onesComplementAdd(diff, uint32(newSrc[i])<<8 | uint32(newDst[i]))
+  }
 
-    // Add the diff to the old checksum
-    newChecksum := onesComplementAdd(diff, uint32(oldChksum16))
+  // Add the diff to the old checksum
+  newChecksum := onesComplementAdd(diff, uint32(oldChksum16))
 
-    return ^uint16(newChecksum)
+  return ^uint16(newChecksum)
 }
 
 func Dispatcher(iface *water.Interface, tun2EthQ chan Packet) error {
