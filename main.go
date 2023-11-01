@@ -8,4 +8,5 @@ import "github.com/Oasixer/packet-panic/cmd"
 
 func main() {
 	cmd.Execute()
+
 }

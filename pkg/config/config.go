@@ -8,12 +8,17 @@ import (
 )
 
 type config struct {
-	Debug       bool              `mapstructure:"debug"`
-	LogCli      bool              `mapstructure:"log-cli"`
-	IFaceCidrStr   string            `mapstructure:"net_iface_cidr"`
-	IName          string            `mapstructure:"interface"`
-	IFaceAddr      net.IP
-	IPNetwork   *net.IPNet
+	Debug             bool          `mapstructure:"debug"`
+	LogCli            bool          `mapstructure:"log-cli"`
+	IFaceCidrStr      string        `mapstructure:"net_iface_cidr"`
+	OFaceCidrStr      string        `mapstructure:"net_oface_cidr"`
+	NetReturnAddrStr  string        `mapstructure:"net_return_addr"`
+	IName             string        `mapstructure:"interface"`
+	IFaceAddr         net.IP
+	OFaceAddr         net.IP // OuterFace (outgoing interface hehe)
+	NetReturnAddr     net.IP        
+	IFaceNetwork      *net.IPNet
+	OFaceNetwork      *net.IPNet
 }
 
 var Config config

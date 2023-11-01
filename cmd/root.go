@@ -1,22 +1,26 @@
 /*
 Copyright © 2023 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
 import (
 	"os"
+	"fmt"
+	"time"
 
-	"github.com/Oasixer/ppanic/pkg/config"
+	"net"
 
-	"github.com/Oasixer/ppanic/pkg/tun"
+	"github.com/Oasixer/packet-panic/pkg/config"
+	"github.com/Oasixer/packet-panic/pkg/ppanic"
+	"github.com/Oasixer/packet-panic/pkg/tun"
 
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
-
+	"golang.org/x/net/ipv4"
+	"golang.org/x/sync/errgroup"
 )
 
 var cfgFile string
@@ -33,7 +37,7 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
-	// Run: func(cmd *cobra.Command, args []string) { },
+	Run: Root,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -46,6 +50,7 @@ func Execute() {
 }
 
 func init() {
+	cobra.OnInitialize(initConfig)
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
@@ -59,7 +64,7 @@ func init() {
 	pFlags.StringP("net_iface_cidr", "i", "", "CIDR of network to join")
 	viper.BindPFlag("net_iface_cidr", pFlags.Lookup("fleet"))
 	
-	pFlags.StringP("interface", "i", "by1", "The internal network interface name")
+	pFlags.StringP("interface", "x", "by1", "The internal network interface name")
 	viper.BindPFlag("interface", pFlags.Lookup("interface"))
 
 }
@@ -96,14 +101,23 @@ func initConfig() {
 	}
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMs
 
-	config.Config.FleetAddr, config.Config.FleetNet, err = net.ParseCIDR(config.Config.FleetStr)
+	config.Config.OFaceAddr, config.Config.OFaceNetwork, err = net.ParseCIDR(config.Config.OFaceCidrStr)
 	if err != nil {
 		log.Fatal().
 			Err(err).
-			Msg("Couldn't parse CIDR")
+			Msg("Couldn't parse Outgoing interface CIDR")
 	}
 
-	config.Config.Password = []byte(config.Config.PasswordStr)
+	config.Config.IFaceAddr, config.Config.IFaceNetwork, err = net.ParseCIDR(config.Config.IFaceCidrStr)
+	if err != nil {
+		log.Fatal().
+			Err(err).
+			Msg("Couldn't parse Incoming interface CIDR")
+	}
+
+	config.Config.NetReturnAddr = net.ParseIP(config.Config.NetReturnAddrStr)
+
+	// config.Config.Password = []byte(config.Config.PasswordStr)
 
 	// set to info level first
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
@@ -134,34 +148,47 @@ func initConfig() {
 	log.Debug().
 		Bool("Debug", config.Config.Debug).
 		Bool("Log-Cli", config.Config.LogCli).
-		Str("Iname", config.Config.IName).
-		Str("Listen-Port", config.Config.ListenPort).
-		Str("IFaceAddr", config.Config.FleetNet.String()).
-		Str("IPNetwork", config.Config.FleetAddr.String()).
+		Str("IName", config.Config.IName).
+		Str("IFaceAddr", config.Config.IFaceAddr.String()).
+		Str("IFaceNetwork", config.Config.IFaceNetwork.String()).
 		Msg("Config")
 }
+
+
 func Root(cmd *cobra.Command, args []string) {
+	fmt.Printf("config: %#v\n\n", config.Config)
 	// TODO look into creating interface in tunrouter
-	inf, err := tun.New(config.Config.IName,
-		config.Config.FleetAddr, config.Config.FleetNet)
+	iface, err := tun.New(config.Config.IName,
+		config.Config.IFaceAddr, config.Config.IFaceNetwork)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Tun Creation Error")
 	}
 
 	eg := new(errgroup.Group)
 
-	eth2TunQ := make(chan []byte, 1)
-	tun2EthQ := make(chan ethrouter.Packet, 1)
+	tun2EthQ := make(chan ppanic.Packet, 1)
+
+	conn, err := net.ListenPacket("ip4:udp", "0.0.0.0")
+	if err != nil {
+		log.Fatal().Err(err).Msg("Error creating raw IPv4 connection")
+		return
+	}
+	defer conn.Close()
+	// Convert the PacketConn to a RawConn
+	rawConn, err := ipv4.NewRawConn(conn)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Error creating RawConn")
+		return
+	}
 
 	eg.Go(func() error {
-		return ethrouter.Run(eg, tun2EthQ, eth2TunQ)
+		return ppanic.Dispatcher(iface, tun2EthQ)
 	})
-
 	eg.Go(func() error {
-		return tunrouter.Run(eg, inf, tun2EthQ, eth2TunQ) //TODO verify order of egress and ingress
+		return ppanic.PacketSender(rawConn, tun2EthQ)
 	})
 
 	if err = eg.Wait(); err != nil {
-		log.Fatal().Err(err).Msg("Buoy Run Failed")
+		log.Fatal().Err(err).Msg("PPanic Run Failed")
 	}
 }

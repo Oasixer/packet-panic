@@ -35,6 +35,12 @@ func New(iname string, ip net.IP, network *net.IPNet) (*water.Interface, error) 
 		return nil, fmt.Errorf("tun.Init: %w", err)
 	}
 
+	// This is the same as running `ip addr add <ip + network in CIDR notation> dev <iname>`
+	err = inf.SetLinkMTU(65535)
+	if err != nil {
+		return nil, fmt.Errorf("tun.Init: %w", err)
+	}
+
 	// This is the same as `ip link set dev <iname> up`
 	err = inf.SetLinkUp()
 	if err != nil {
