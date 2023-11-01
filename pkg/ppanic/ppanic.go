@@ -11,6 +11,7 @@ import (
 
 	"github.com/songgao/water"
 	"golang.org/x/net/ipv4"
+	"github.com/rs/zerolog/log"
 )
 
 type Packet struct {
@@ -120,8 +121,9 @@ func (d *Delayer) Manipulate(packet *Packet) {
 }
 
 func Dispatcher(iface *water.Interface, tun2EthQ chan Packet, manipulators []PacketManipulator) error {
-  buf := make([]byte, maxIPPacketSize)
+  log.Debug().Msgf("hi")
   for {
+    buf := make([]byte, maxIPPacketSize)
     n, err := iface.Read(buf)
     if err != nil {
       // TODO fix that error, its useless(stupid copy paste). Change it to be the same behavior(interface close)
@@ -132,19 +134,18 @@ func Dispatcher(iface *water.Interface, tun2EthQ chan Packet, manipulators []Pac
       return fmt.Errorf("ppanic.dispatcher: %w", err)
     }
 
-    cop := buf[:n]
-    // byte array to fix use-after-free
-    // goroutine on anon func
-    go func(buf []byte, n int) {
+    go func(buf []byte, buf_len int) {
       startTime := time.Now()
+      startTime = startTime
 
       // get the version xxxx0000 is the version in the first byte
-      version := cop[0] >> 4
+      version := buf[0] >> 4
       if int(version) != 4 {
         return // exit if not ipv4
       }
+      // log.Debug().Msgf("buf_len: %d", buf_len)
 
-      header, err := ipv4.ParseHeader(cop)
+      header, err := ipv4.ParseHeader(buf)
       if err != nil {
         fmt.Printf("Error parsing header")
         return 
@@ -153,22 +154,24 @@ func Dispatcher(iface *water.Interface, tun2EthQ chan Packet, manipulators []Pac
       // oldDst := header.Dst
       header.Dst = config.Config.OFaceAddr // TODO: return addr table
       header.Src = config.Config.OFaceAddr
-      header.TotalLen = len(cop)
+      header.TotalLen = len(buf)
       header.Checksum = 0 // checksum is recalculated in the socket write
 
-      payload := cop[header.Len:]
+      payload := buf[header.Len:]
 
       // Fix UDP checksum which is for some reason based on src and dest IP addresses
       // from the IP packet header even though UDP is layer 4...
       if (header.Protocol == 17) {
         udpStart := header.Len
-        udpHeader := cop[udpStart : udpStart+8] // 8 bytes of UDP header
-        // checksum := updateChecksumForNewIPs(udpHeader[6:8], oldSrc, oldDst, header.Src, header.Dst)
-        udpPayload := cop[udpStart+8 : n]
+        udpHeader := buf[udpStart : udpStart+8] // 8 bytes of UDP header
+        udpPayload := buf[udpStart+8 : buf_len]
 
         udpHeader[6] = 0
         udpHeader[7] = 0
         checksum := computeUDPChecksum(header.Src, header.Dst, udpHeader, udpPayload)
+        // fmt.Printf("checksum: 0x%x%x", byte(checksum >> 8), byte(checksum & 0xFF))
+        // checksum2 := updateChecksumForNewIPs(udpHeader[6:8], oldSrc, oldDst, header.Src, header.Dst)
+
 
         udpHeader[6] = byte(checksum >> 8) // update header w/ new checksum
         udpHeader[7] = byte(checksum & 0xFF)
@@ -181,17 +184,13 @@ func Dispatcher(iface *water.Interface, tun2EthQ chan Packet, manipulators []Pac
         payload: payload,
       }
 
-
-
-      fmt.Printf("b4 manipulating packet %d", startTime.Sub(time.Now()))
       // Apply manipulations
-			for _, manipulator := range manipulators {
-				manipulator.Manipulate(&packet)
-			}
-      fmt.Printf("after manipulating packet %d", startTime.Sub(time.Now()))
+			// for _, manipulator := range manipulators {
+			// 	manipulator.Manipulate(&packet)
+			// }
 
       tun2EthQ <- packet
-    }(cop, n)
+    }(buf, n)
   }
 }
 
@@ -204,7 +203,7 @@ func PacketSender(conn *ipv4.RawConn, tun2EthQ chan Packet) error{
     packet := <-tun2EthQ
     packetSizeBytes := packet.header.TotalLen
 		lifetimeBytesSent += packetSizeBytes
-
+    // log.Debug().Msgf("payload_len: %d", len(packet.payload))
     // send packet
     err := conn.WriteTo(packet.header, packet.payload, nil)
     if err != nil { // if connection is closed, exit nicely
@@ -215,7 +214,7 @@ func PacketSender(conn *ipv4.RawConn, tun2EthQ chan Packet) error{
     }
     nPackets += 1
 
-    // fmt.Printf("sent packet to %s\n", packet.header.Dst.String())
+    // log.Debug().Msgf("sent packet to %s", packet.header.Dst.String())
     if (gotFirstPacket == false){
       startTime = time.Now()
       gotFirstPacket = true

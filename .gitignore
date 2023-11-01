@@ -1,4 +1,4 @@
 main
-test_data
+test_data*
 __pycache__
 .vscode/
