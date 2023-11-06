@@ -14,7 +14,7 @@ Capable of transparently and bidirectionally intercepting 15+ Gb/s of layer 3 pa
 
 ## How are packets being intercepted
 
-- The [TUN](https://en.wikipedia.org/wiki/TUN/TAP) Kernel Virtual Interface is brought up and configured by a (user-supplied yaml)[#Configuration] ((see pp.example.yaml)[https://github.com/Oasixer/packet-panic/blob/master/pp.example.yaml])
+- The [TUN](https://en.wikipedia.org/wiki/TUN/TAP) Kernel Virtual Interface is brought up and configured by a [user-supplied yaml](#Configuration) ([see pp.example.yaml](https://github.com/Oasixer/packet-panic/blob/master/pp.example.yaml))
 - Configuration summary:
   - IP Range to intercept packets on [CIDR](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing) specified by `config` -> `net_iface_cidr` (example: `69.69.69.1/24`) to intercept packets on [Layer 3](https://en.wikipedia.org/wiki/OSI_model)
   - An interface name (example: `ppanic`) set in `config`->`interface_name`)
