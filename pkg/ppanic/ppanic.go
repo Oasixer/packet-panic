@@ -116,8 +116,8 @@ func NewDelayer(minDelay, maxDelay time.Duration) *Delayer {
 }
 
 func (d *Delayer) Manipulate(packet *Packet) {
-	// randomDelay := d.minDelay + time.Duration(rand.Int63n(int64(d.maxDelay-d.minDelay)))
-	// time.Sleep(randomDelay)
+	randomDelay := d.minDelay + time.Duration(rand.Int63n(int64(d.maxDelay-d.minDelay)))
+	time.Sleep(randomDelay)
 }
 
 func Dispatcher(iface *water.Interface, tun2EthQ chan Packet, manipulators []PacketManipulator) error {
@@ -185,9 +185,9 @@ func Dispatcher(iface *water.Interface, tun2EthQ chan Packet, manipulators []Pac
       }
 
       // Apply manipulations
-			// for _, manipulator := range manipulators {
-			// 	manipulator.Manipulate(&packet)
-			// }
+			for _, manipulator := range manipulators {
+				manipulator.Manipulate(&packet)
+			}
 
       tun2EthQ <- packet
     }(buf, n)

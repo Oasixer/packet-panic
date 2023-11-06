@@ -13,7 +13,7 @@ type config struct {
 	IFaceCidrStr      string        `mapstructure:"net_iface_cidr"`
 	OFaceCidrStr      string        `mapstructure:"net_oface_cidr"`
 	NetReturnAddrStr  string        `mapstructure:"net_return_addr"`
-	IName             string        `mapstructure:"interface"`
+	IName             string        `mapstructure:"interface_name"`
 	IFaceAddr         net.IP
 	OFaceAddr         net.IP // OuterFace (outgoing interface hehe)
 	NetReturnAddr     net.IP        

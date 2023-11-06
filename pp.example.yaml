@@ -3,6 +3,6 @@ net_iface_cidr: "69.69.69.2/24"
 net_oface_cidr: "127.0.0.1/24"
 # net_oface_cidr: "192.168.1.75/24"
 net_return_addr: "69.69.69.3"
-interface: "butt"
+interface_name: "ppanic"
 debug: true
 log-cli: true
