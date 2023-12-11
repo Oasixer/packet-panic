@@ -2,3 +2,6 @@ main
 test_data*
 __pycache__
 .vscode/
+
+# GI -> gitignore
+*GI.yaml 
