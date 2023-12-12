@@ -1,6 +1,7 @@
 package ppanic
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"math/rand"
@@ -9,18 +10,62 @@ import (
 
 	"github.com/Oasixer/packet-panic/pkg/config"
 
+	"github.com/rs/zerolog/log"
 	"github.com/songgao/water"
 	"golang.org/x/net/ipv4"
-	"github.com/rs/zerolog/log"
 )
 
+// // Key represents a tuple of net.IP, uint16, uint16
+//type Key struct {
+//    IP1    net.IP
+//    Port1 uint16
+//    Port2 uint16
+//    Protocol string
+//
+//    // should prob eventually map with boht IPs
+//    // in the hash and just have some connection IP pairs hardcoded
+//    // and otherwise assume 192 ... .4 = 127 ... .4
+//    // IP1    net.IP
+//    // Port1 uint16
+//    // IP2    net.IP
+//    // Port2 uint16
+//    // Protocol string
+//}
+//
+//// We use this function to generate a unique hash for the Key.
+//// The approach to hashing can vary based on your requirements.
+//func (k Key) Hash() string {
+//    return fmt.Sprintf("%s-%d-%d-%s", k.IP.String(), k.Port1, k.Port2, k.Protocol)
+//}
+//
 type Packet struct {
-  header *ipv4.Header
-  payload []byte
+ header *ipv4.Header
+ payload []byte
 }
+//
+//type ReadableMetadata struct {
+//  nPacketsStr string
+//  speedStr string
+//  srcIp string
+//  dstIp string
+//}
+//// readableMetadata: *ReadableMetadata,
+//
+//type Connection struct {
+//  nPackets uint64
+//  srcIp net.IP
+//  dstIp net.IP
+//  srcPort uint16
+//  dstPort uint16
+//  method string
+//  speedGBps float32
+//  displayPackets []Packet
+//}
 
 const (
   maxIPPacketSize = 65535
+  nDisplayPackets = 10 // 10 rows in the packet view. only periodically 
+  nDisplayConnections = 8
 )
 
 func computeUDPChecksum(src, dst net.IP, udpHeader, udpPayload []byte) uint16 {
@@ -122,6 +167,9 @@ func (d *Delayer) Manipulate(packet *Packet) {
 
 func Dispatcher(iface *water.Interface, tun2EthQ chan Packet, manipulators []PacketManipulator) error {
   log.Debug().Msgf("hi")
+
+  // TODO1
+  // sessions := make(map[string]net.IP) // no idea if this is concurrency safe hehe
   for {
     buf := make([]byte, maxIPPacketSize)
     n, err := iface.Read(buf)
@@ -150,21 +198,70 @@ func Dispatcher(iface *water.Interface, tun2EthQ chan Packet, manipulators []Pac
         fmt.Printf("Error parsing header")
         return 
       }
-      // oldSrc := header.Src
-      // oldDst := header.Dst
+      oldSrc := header.Src
+      oldDst := header.Dst
+
+      // TODO1
       header.Dst = config.Config.OFaceAddr // TODO: return addr table
       header.Src = config.Config.OFaceAddr
+      // right so atm we have config.Config.OFaceAddr, config.Config.OFaceNetwork
+      //        = net.ParseCIDR(config.Config.OFaceCidrStr)
+
+      // so, we need to store a src ip and port for a certain dst ip + port combo
+      // so that if they reply @ the proxy, we know who to fwd their reply to.
+      // ie.
+      // if you send a packet to 69.69.69.4:5000 w/ src=192.168.0.1:26738,
+      // we'll look up the [oldDstIP, oldSrcPort, oldDstPort] and not find any session
+      //                   [69.69.69.4, 26738. created key for it.,    5000     ]
+      // (store it with reversed ports from the search!)
+      //                                     oldDstIP,   oldDstPort, oldSrcPort
+      // we'll store that session as mapping [69.69.69.4, 5000,      26738]     to [192.168.0.1]
+      // and we fwd that to 127.0.0.4:5000 w/ src=69.69.69.4:26738,  <-- untouched src port and dst port!
+      //                                      [oldDstIP,oldSrcPort,oldDstPort]->oldSrcIp
+      //
+      // lets say server replies @ 69.69.69.4:26738 w/ src=127.0.0.4:5000
+      //
+      // then we'll look up [oldDstIP, oldSrcPort, oldDstPort] so sessions[69.69.69.4, 5000, 26738]
+      // and retrieve the IP [192.168.0.1] associated with the already known dst port 26738.
+
+      // TODO1
+      // header.Src = config.Config.IFaceAddr
+      // header.Src = oldDst
       header.TotalLen = len(buf)
       header.Checksum = 0 // checksum is recalculated in the socket write
 
       payload := buf[header.Len:]
 
-      // Fix UDP checksum which is for some reason based on src and dest IP addresses
-      // from the IP packet header even though UDP is layer 4...
-      if (header.Protocol == 17) {
+      if (header.Protocol == 6) {
+        // TODO: handle TCP
+      } else if (header.Protocol == 17) { // UDP
+        // Fix UDP checksum which is for some reason based on src and dest IP addresses
+        // from the IP packet header even though UDP is layer 4... 
         udpStart := header.Len
         udpHeader := buf[udpStart : udpStart+8] // 8 bytes of UDP header
+        // please get the UDP src and dst port for me from bytes to uint16 here
         udpPayload := buf[udpStart+8 : buf_len]
+
+        // Assuming udpHeader is a slice of bytes containing at least the first 8 bytes of the UDP header
+        udpSrcPort := binary.BigEndian.Uint16(udpHeader[0:2]) // Source port is the first 2 bytes
+        udpDstPort := binary.BigEndian.Uint16(udpHeader[2:4]) // Destination port is the next 2 bytes
+        fmt.Printf("UDP Source Port: %d, Destination Port: %d\n", udpSrcPort, udpDstPort)
+        fmt.Printf("oldSrc %s, oldDst: %s\n", oldSrc, oldDst)
+        // key := Key{
+        //   IP: oldDst,
+        //   Port1: udpSrcPort,
+        //   Port2: udpDstPort,
+        //   Protocol: "UDP"
+        // }
+
+        // if sessions[key.Hash()]; ok {
+        //   fmt.println("found session for key: (todo print key?)");
+        //   header.Dst = sessions[key.Hash()];
+        // } else {
+        //   key.Port1, key.Port2 = key.Port2, key.Port1;
+        //   sessions[key.Hash()] = oldSrc;
+        //   fmt.println("no found session. created key for it.");
+        // }
 
         udpHeader[6] = 0
         udpHeader[7] = 0

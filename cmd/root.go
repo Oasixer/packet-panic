@@ -184,7 +184,7 @@ func Root(cmd *cobra.Command, args []string) {
 	manipulations := []ppanic.PacketManipulator{
 		// &ppanic.Corruptor{},
 		// ppanic.NewDelayer(1000*time.Millisecond, 7000*time.Millisecond),
-		ppanic.NewDelayer(1000*time.Millisecond, 7000*time.Millisecond),
+		ppanic.NewDelayer(200*time.Millisecond, 800*time.Millisecond),
 	}
 
 	eg.Go(func() error {
