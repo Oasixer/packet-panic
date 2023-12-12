@@ -2,7 +2,12 @@ import socket
 
 # HOST = '192.168.1.75'
 # HOST = '127.0.0.1'  # Loopback address
-HOST = '0.0.0.0'
+# HOST = '0.0.0.0'
+
+# if this IP is wrong it will crash with address unavailable to bind
+HOST = '192.168.2.213'
+
+# HOST = '192.168.2.207'
 PORT = 8081
 
 def main():
