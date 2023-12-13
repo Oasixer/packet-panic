@@ -31,3 +31,18 @@ export let sampleConnections: ConnectionData[] = [
     speed: "420mb/s",
   },
 ];
+
+// function parseNodeDataDisplay(jsonData: any): NodeDataDisplay {
+//   // console.log(typeof jsonData.updated);
+//   // console.log(jsonData.updated);
+//   jsonData.updated = new Date(jsonData.updated);
+//   // console.log("pls...")
+//   // console.log(new Date(jsonData.updated));
+//   // console.log(jsonData.updated.toLocaleTimeString());
+//   const nodes = jsonData as NodeDataDisplay;
+//   nodes.updated = new Date(nodes.updated);
+//   for (let i=0; i<4; i++){
+//       nodes.nodes[i].last_ping = new Date(nodes.nodes[i].last_ping)
+//   }
+//   return nodes;
+// }
