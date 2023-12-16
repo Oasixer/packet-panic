@@ -1,7 +1,7 @@
 import React from "react";
 
-import type { ConnectionData } from "@/connectionData.ts";
-import { sampleConnections } from "@/connectionData.ts";
+import type { ConnectionData } from "@/Dashboard/connectionData.ts";
+import { sampleConnections } from "@/Dashboard/connectionData.ts";
 // import Connection from "./Connection";
 
 const ConnectionDetailsPane = () => {

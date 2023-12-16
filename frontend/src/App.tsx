@@ -1,7 +1,7 @@
 import { useState, FC } from "react";
 import Home from "./Home";
-import ConnectionDetailsPane from "@/ConnectionDetailsPane/ConnectionDetailsPane";
-import ConnectionsPane from "@/ConnectionsPane/ConnectionsPane";
+import ConnectionDetailsPane from "@/Dashboard/ConnectionDetailsPane/ConnectionDetailsPane";
+import ConnectionsPane from "@/Dashboard/ConnectionsPane/ConnectionsPane";
 import React from "react";
 
 // Define a type for the person object

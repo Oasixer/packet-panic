@@ -28,29 +28,10 @@ import (
 const (
   maxIPPacketSize = 65535
 )
-// type Connection struct {
-//   nPackets uint64
-//   srcIP net.IP
-//   dstIP net.IP
-//   srcPort uint16
-//   dstPort uint16
-//   method string
-//   speedGBps float32
-//   displayPackets []Packet
-//   lastPacketTs int64
-// }
-
-// type Change interface {
-//   Type() string
-// }
-
-// func (c CorruptorManipulation) Type() string {
-//   return "corruptor"
-// }
 
 type DelayerConfig struct{
-  MinDelay time.Duration `json:"MinDelay"`
-  MaxDelay time.Duration `json:"MaxDelay"`
+  MinDelay time.Duration `json:"minDelay"`
+  MaxDelay time.Duration `json:"maxDelay"`
 }
 
 type CorruptorConfig struct{
@@ -226,9 +207,9 @@ func (c *Corruptor) Manipulate(packet *Packet, displayPacket *DisplayPacket) {
 func Dispatcher(iface *water.Interface, tun2EthQ chan Packet, displayPacketQ chan InfoUpdate, manipulators []PacketManipulator) error {
   log.Debug().Msgf("hi")
 
-  // connections := make(map[string]Connection) // not concurrency safe, would need a lock: VVVVVVVVVVVVVVVVV
+  // connections := make(map[string]ConnectionData) // not concurrency safe, would need a lock: VVVVVVVVVVVVVVVVV
   // lock := sync.RWMutex{} // this works but its easier to just use cmap (concurrent-map)
-  PP.connections = cmap.New[*Connection]()
+  PP.connections = cmap.New[*ConnectionData]()
   // also, major TODO: would be to look closely on if this has a major performance impact (quite possible!) and if so we'll have to do an append-only data system instead of having individual request handler coroutines sharing the map!
 
 
@@ -254,98 +235,6 @@ func Dispatcher(iface *water.Interface, tun2EthQ chan Packet, displayPacketQ cha
     }(buf, n)
   }
 }
-    //   tun2EthQ <- packet
-    // }(buf, n)
-
-
-   //      // Fix UDP checksum which is for some reason based on src and dest IP addresses
-   //      // from the IP packet header even though UDP is layer 4... 
-   //      udpStart := header.Len
-   //      udpHeader := buf[udpStart : udpStart+8] // 8 bytes of UDP header
-   //      udpPayload := buf[udpStart+8 : buf_len]
-			//
-   //      udpSrcPort := binary.BigEndian.Uint16(udpHeader[0:2]) // Source port is the first 2 bytes
-   //      udpDstPort := binary.BigEndian.Uint16(udpHeader[2:4]) // Destination port is the next 2 bytes
-			//
-   //      fmt.Printf("UDP Source Port: %d, Destination Port: %d\n", udpSrcPort, udpDstPort)
-   //      fmt.Printf("oldSrc %s, oldDst: %s\n", oldSrc, oldDst)
-			//
-   //      // for i := 0; i < len(config.Config.KnownClients); i++ {
-			//
-   //      hash := fmt.Sprintf("%s:%d-%d", udpSrcPort, udpDstPort, "UDP")
-			//
-   //      var curConnection Connection
-   //      var curConnectionHash string
-   //      if connect, ok := connections.Get(hash); ok {
-   //        // ayo WTF is connections.GetShard()?????
-			//
-   //        fmt.Printf("found connection: %d -> %d", udpSrcPort, udpDstPort)
-   //        connect.nPackets++
-   //        connect.lastPacketTs = time.Now().UnixMilli()
-   //        curConnection = connect
-			//
-   //        // TODO update recent 10 packets or whatever depending on timing
-   //      } else {
-   //        for i := 0; i < len(config.Config.KnownClients); i++ {
-   //          knownClient := config.Config.KnownClients[i]
-   //          p1 := uint16(knownClient.Port1)
-   //          p2 := uint16(knownClient.Port2)
-   //          ports_match := p1 == udpSrcPort && p2 == udpDstPort   
-   //          backward_match := p2 == udpSrcPort && p1 == udpDstPort
-			//
-   //          // todo mild refactor
-   //          if (ports_match || backward_match) && knownClient.Method == "UDP" {
-   //            curConnectionHash = fmt.Sprintf("%s:%d-%d", knownClient.Method, udpSrcPort, udpDstPort)
-   //            srcIP := net.ParseIP(knownClient.IP1)
-   //            dstIP := net.ParseIP(knownClient.IP2)
-   //            if backward_match{ // if 2->1 rather than 1->2 which is assumed
-   //              srcIP = net.ParseIP(knownClient.IP2)
-   //              dstIP = net.ParseIP(knownClient.IP1)
-   //            }
-   //            curConnection = Connection{
-   //              nPackets: 1,
-   //              srcIP: srcIP,
-   //              dstIP: dstIP,
-   //              srcPort: udpSrcPort,
-   //              dstPort: udpDstPort,
-   //              method: knownClient.Method,
-   //              speedGBps: 0,
-   //              displayPackets: make([]Packet, 0),
-   //            }
-   //            connections.Set(curConnectionHash, curConnection)
-   //          }
-   //        }
-   //      }
-			//
-			//
-			//
-   //      udpHeader[6] = 0
-   //      udpHeader[7] = 0
-   //      checksum := ComputeUDPChecksum(header.Src, header.Dst, udpHeader, udpPayload)
-   //      // fmt.Printf("checksum: 0x%x%x", byte(checksum >> 8), byte(checksum & 0xFF))
-   //      // checksum2 := UpdateChecksumForNewIPs(udpHeader[6:8], oldSrc, oldDst, header.Src, header.Dst)
-			//
-			//
-   //      udpHeader[6] = byte(checksum >> 8) // update header w/ new checksum
-   //      udpHeader[7] = byte(checksum & 0xFF)
-			//
-   //    } else {
-   //      fmt.Printf("Header was not UDP!: %v", header.Protocol)
-   //    }
-   //    packet := Packet{
-   //      header: header,
-   //      payload: payload,
-   //    }
-			//
-   //    // Apply manipulations
-			// for _, manipulator := range manipulators {
-			// 	manipulator.Manipulate(&packet)
-			// }
-
-  //     tun2EthQ <- packet
-  //   }(buf, n)
-  // }
-// }
 
 func PacketSender(conn *ipv4.RawConn, tun2EthQ chan Packet) error{
   startTime := time.Now()

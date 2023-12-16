@@ -19,7 +19,7 @@ import (
 )
 
 type pp struct {
-  connections cmap.ConcurrentMap[string, *Connection]
+  connections cmap.ConcurrentMap[string, *ConnectionData]
 }
 type Packet struct {
   ipHeader *ipv4.Header
@@ -48,18 +48,6 @@ const (
 //}
 //// readableMetadata: *ReadableMetadata,
 //
-type Connection struct {
-  id string
-  nPackets uint64
-  srcIP net.IP
-  dstIP net.IP
-  srcPort uint16
-  dstPort uint16
-  method string
-  speedGBps float32
-  displayPackets []DisplayPacket
-  lastPacketTs int64
-}
 
 
 // type IpHeader struct {
@@ -79,9 +67,21 @@ type Connection struct {
 //   Padding        []byte  // variable length, optional
 //   Data           UdpHeader     // Payload - UDP struct defined later
 
+type ConnectionData struct {
+  Id string `json:"id"`
+  NPackets uint64 `json:"nPackets"`
+  SrcIP net.IP `json:"srcIP"`
+  DstIP net.IP `json:"dstIP"`
+  SrcPort uint16 `json:"srcPort"`
+  DstPort uint16 `json:"dstPort"`
+  Method string `json:"method"`
+  SpeedGBps float32 `json:"speedGBps"`
+  DisplayPackets []DisplayPacket `json:"displayPackets"`
+  LastPacketTs int64 `json:"lastPacketTs"`
+}
 
 type InfoUpdate struct {
-  Connections []Connection `json:"connections"`
+  Connections []ConnectionData `json:"connections"`
   NewPackets []DisplayPacket `json:"newPackets"`
 }
 
@@ -98,7 +98,7 @@ type DisplayPacket struct {
   B64RawL3Header string  `json:"b64RawL3Header"` // base64 enc
   B64RawL3Payload string `json:"b64RawL3Payload"` // base64 enc
 
-  Manips []Manipulation
+  Manips []Manipulation `json:"manips"`
 }
 
 func HandleIpPacket(buf []byte, buf_len int, tun2EthQ chan Packet, displayPacketQ chan InfoUpdate, manipulators []PacketManipulator) bool{
@@ -156,7 +156,7 @@ func HandleIpPacket(buf []byte, buf_len int, tun2EthQ chan Packet, displayPacket
   
   // race conditions???
   _connections := PP.connections.Items() // well this does copy...
-  connections := make([]Connection, len(_connections))
+  connections := make([]ConnectionData, len(_connections))
   i := 0
   for _, value := range _connections { // now we copy again... lol
     connections[i] = *value
@@ -178,8 +178,8 @@ func HandleIpPacket(buf []byte, buf_len int, tun2EthQ chan Packet, displayPacket
   return true
 }
 
-// func timeToUpdateDisplayPackets(curConnection *Connection, nowMillis int64) bool{
-// func timeToUpdateDisplayPackets(curConnection *Connection) bool{
+// func timeToUpdateDisplayPackets(curConnection *ConnectionData, nowMillis int64) bool{
+// func timeToUpdateDisplayPackets(curConnection *ConnectionData) bool{
 //   // firstPacketEver := curConnection.lastPacketTs == 0
 //   nowMillis := time.Now().UnixMilli()
 //   displayPackets := curConnection.displayPackets
@@ -194,7 +194,7 @@ func HandleIpPacket(buf []byte, buf_len int, tun2EthQ chan Packet, displayPacket
 // }
 
 
-func ConnectionFromKnownClients(knownClients []config.KnownClient, udpSrcPort, udpDstPort uint16) (*Connection, bool){
+func ConnectionFromKnownClients(knownClients []config.KnownClient, udpSrcPort, udpDstPort uint16) (*ConnectionData, bool){
   for i := 0; i < len(knownClients); i++ {
     knownClient := knownClients[i]
     p1 := uint16(knownClient.Port1)
@@ -210,26 +210,26 @@ func ConnectionFromKnownClients(knownClients []config.KnownClient, udpSrcPort, u
         srcIP = net.ParseIP(knownClient.IP2)
         dstIP = net.ParseIP(knownClient.IP1)
       }
-      return &Connection{
-        id: uuid.New().String(),
-        nPackets: 1,
-        srcIP: srcIP,
-        dstIP: dstIP,
-        srcPort: udpSrcPort,
-        dstPort: udpDstPort,
-        method: knownClient.Method,
-        speedGBps: 0,
-        displayPackets: make([]DisplayPacket, 0),
-        lastPacketTs: 0, // because we haven't assigned the packet yet...
+      return &ConnectionData{
+        Id: uuid.New().String(),
+        NPackets: 1,
+        SrcIP: srcIP,
+        DstIP: dstIP,
+        SrcPort: udpSrcPort,
+        DstPort: udpDstPort,
+        Method: knownClient.Method,
+        SpeedGBps: 0,
+        DisplayPackets: make([]DisplayPacket, 0),
+        LastPacketTs: 0, // because we haven't assigned the packet yet...
       }, true
     } // end if
   } // end for knownClients
   return nil, false
 }
 
-func updateIpUsingConnection(connection *Connection, header* ipv4.Header){
+func updateIpUsingConnection(connection *ConnectionData, header* ipv4.Header){
   header.Src = config.Config.IFaceAddr
-  header.Dst = connection.dstIP
+  header.Dst = connection.DstIP
 }
 
 type Change struct{
@@ -250,7 +250,7 @@ func handleUdpPacket(ip_Header* ipv4.Header, ipHeaderRaw []byte, udpRaw []byte, 
 
   hash := fmt.Sprintf("%s:%d-%d", udpSrcPort, udpDstPort, "UDP")
   
-  var curConnection *Connection = nil
+  var curConnection *ConnectionData = nil
 
   if connect, ok := PP.connections.Get(hash); ok {
     curConnection = connect

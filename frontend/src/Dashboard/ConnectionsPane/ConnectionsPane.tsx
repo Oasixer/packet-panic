@@ -1,8 +1,8 @@
 import React from "react";
 import { useState, FC } from "react";
-import type { ConnectionData } from "@/connectionData";
-import Connection from "@/ConnectionsPane/Connection";
-import { sampleConnections } from "@/connectionData";
+import type { ConnectionData } from "@/Dashboard/connectionData";
+import Connection from "@/Dashboard/ConnectionsPane/Connection";
+import { sampleConnections } from "@/Dashboard/connectionData";
 
 // JSX;
 

@@ -2,7 +2,7 @@ import React from "react";
 import { FC } from "react";
 
 // forks fine but annoys the linter...
-import type { ConnectionData } from "@/connectionData";
+import type { ConnectionData } from "@/Dashboard/connectionData";
 // import type { ConnectionData } from "../connectionData";
 
 const Connection: FC<{ connData: ConnectionData }> = ({ connData }) => {
