@@ -1,8 +1,8 @@
 export interface ConnectionData {
   uid: number;
   nPackets: number;
-  srcIp: string;
-  dstIp: string;
+  srcIP: string;
+  dstIP: string;
   srcPort: string;
   dstPort: string;
   protocol: string;
@@ -13,8 +13,8 @@ export let sampleConnections: ConnectionData[] = [
   {
     uid: 1,
     nPackets: 1650,
-    srcIp: "192.168.0.1",
-    dstIp: "192.168.0.1",
+    srcIP: "192.168.0.1",
+    dstIP: "192.168.0.1",
     srcPort: "12345",
     dstPort: "8001",
     protocol: "UDP",
@@ -23,8 +23,8 @@ export let sampleConnections: ConnectionData[] = [
   {
     uid: 2,
     nPackets: 238,
-    srcIp: "192.241.6.1",
-    dstIp: "192.168.0.2",
+    srcIP: "192.241.6.1",
+    dstIP: "192.168.0.2",
     srcPort: "12345",
     dstPort: "6969",
     protocol: "TCP",

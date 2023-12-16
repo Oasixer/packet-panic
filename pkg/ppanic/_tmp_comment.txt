@@ -1,0 +1,20 @@
+      // header.Src = config.Config.OFaceAddr
+      // right so atm we have config.Config.OFaceAddr, config.Config.OFaceNetwork
+      //        = net.ParseCIDR(config.Config.OFaceCidrStr)
+
+      // so, we need to store a src ip and port for a certain dst ip + port combo
+      // so that if they reply @ the proxy, we know who to fwd their reply to.
+      // ie.
+      // if you send a packet to 69.69.69.4:6000 w/ src=192.168.0.1:26738,
+      // we'll look up the [oldDstIP, oldSrcPort, oldDstPort] and not find any session
+      //                   [69.69.69.4, 26738. created key for it.,    6000     ]
+      // (store it with reversed ports from the search!)
+      //                                     oldDstIP,   oldDstPort, oldSrcPort
+      // we'll store that session as mapping [69.69.69.4, 6000,      26738]     to [192.168.0.1]
+      // and we fwd that to 127.0.0.4:6000 w/ src=69.69.69.4:26738,  <-- untouched src port and dst port!
+      //                                      [oldDstIP,oldSrcPort,oldDstPort]->oldSrcIP
+      //
+      // lets say server replies @ 69.69.69.4:26738 w/ src=127.0.0.4:6000
+      //
+      // then we'll look up [oldDstIP, oldSrcPort, oldDstPort] so connections[69.69.69.4, 6000, 26738]
+      // and retrieve the IP [192.168.0.1] associated with the already known dst port 26738.

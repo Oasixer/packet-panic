@@ -101,7 +101,13 @@ func initConfig() {
 	}
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMs
 
-	config.Config.OFaceAddr, config.Config.OFaceNetwork, err = net.ParseCIDR(config.Config.OFaceCidrStr)
+	for i := 0; i < len(config.Config.KnownClients); i++ {
+		client := config.Config.KnownClients[i]
+		client.IP1_ = net.ParseIP(client.IP1)
+		client.IP2_ = net.ParseIP(client.IP2)
+	}
+          // client := connections[i]
+	// config.Config.OFaceAddr, config.Config.OFaceNetwork, err = net.ParseCIDR(config.Config.OFaceCidrStr)
 	if err != nil {
 		log.Fatal().
 			Err(err).
@@ -115,7 +121,7 @@ func initConfig() {
 			Msg("Couldn't parse Incoming interface CIDR")
 	}
 
-	config.Config.NetReturnAddr = net.ParseIP(config.Config.NetReturnAddrStr)
+	// config.Config.NetReturnAddr = net.ParseIP(config.Config.NetReturnAddrStr)
 
 	// config.Config.Password = []byte(config.Config.PasswordStr)
 
@@ -167,7 +173,9 @@ func Root(cmd *cobra.Command, args []string) {
 	eg := new(errgroup.Group)
 
 	tun2EthQ := make(chan ppanic.Packet, 1)
+	displayPacketQ := make(chan ppanic.DisplayPacket, 1)
 
+	// same conn used to forward packets btw
 	conn, err := net.ListenPacket("ip4:udp", "0.0.0.0")
 	if err != nil {
 		log.Fatal().Err(err).Msg("Error creating raw IPv4 connection")
@@ -181,19 +189,24 @@ func Root(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	manipulations := []ppanic.PacketManipulator{
+	manips := []ppanic.PacketManipulator{
 		// &ppanic.Corruptor{},
 		// ppanic.NewDelayer(1000*time.Millisecond, 7000*time.Millisecond),
-		ppanic.NewDelayer(200*time.Millisecond, 800*time.Millisecond),
+		ppanic.NewDelayer(ppanic.NewDelayerConfig(200*time.Millisecond, 800*time.Millisecond)),
 	}
 
 	eg.Go(func() error {
-		return ppanic.Dispatcher(iface, tun2EthQ, manipulations)
+		return ppanic.Dispatcher(iface, tun2EthQ, displayPacketQ, manips)
 	})
 
 	eg.Go(func() error {
 		return ppanic.PacketSender(rawConn, tun2EthQ)
 	})
+
+	eg.Go(func() error {
+		return ppanic.DataServer(displayPacketQ)
+	})
+ 
 
 	if err = eg.Wait(); err != nil {
 		log.Fatal().Err(err).Msg("PPanic Run Failed")

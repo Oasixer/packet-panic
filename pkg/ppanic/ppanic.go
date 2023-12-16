@@ -1,175 +1,237 @@
 package ppanic
 
 import (
-	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math/rand"
 	"net"
+
+	// "sync"
 	"time"
 
-	"github.com/Oasixer/packet-panic/pkg/config"
+	// "github.com/Oasixer/packet-panic/pkg/config"
 
+	"github.com/orcaman/concurrent-map/v2"
 	"github.com/rs/zerolog/log"
 	"github.com/songgao/water"
 	"golang.org/x/net/ipv4"
 )
 
-// // Key represents a tuple of net.IP, uint16, uint16
-//type Key struct {
-//    IP1    net.IP
-//    Port1 uint16
-//    Port2 uint16
-//    Protocol string
+// used to be defined here, now moved to connections/connections.go
+// type Packet struct {
+//   header *ipv4.Header
+//   payload []byte
+// }
 //
-//    // should prob eventually map with boht IPs
-//    // in the hash and just have some connection IP pairs hardcoded
-//    // and otherwise assume 192 ... .4 = 127 ... .4
-//    // IP1    net.IP
-//    // Port1 uint16
-//    // IP2    net.IP
-//    // Port2 uint16
-//    // Protocol string
-//}
-//
-//// We use this function to generate a unique hash for the Key.
-//// The approach to hashing can vary based on your requirements.
-//func (k Key) Hash() string {
-//    return fmt.Sprintf("%s-%d-%d-%s", k.IP.String(), k.Port1, k.Port2, k.Protocol)
-//}
-//
-type Packet struct {
- header *ipv4.Header
- payload []byte
-}
-//
-//type ReadableMetadata struct {
-//  nPacketsStr string
-//  speedStr string
-//  srcIp string
-//  dstIp string
-//}
-//// readableMetadata: *ReadableMetadata,
-//
-//type Connection struct {
-//  nPackets uint64
-//  srcIp net.IP
-//  dstIp net.IP
-//  srcPort uint16
-//  dstPort uint16
-//  method string
-//  speedGBps float32
-//  displayPackets []Packet
-//}
 
 const (
   maxIPPacketSize = 65535
-  nDisplayPackets = 10 // 10 rows in the packet view. only periodically 
-  nDisplayConnections = 8
 )
+// type Connection struct {
+//   nPackets uint64
+//   srcIP net.IP
+//   dstIP net.IP
+//   srcPort uint16
+//   dstPort uint16
+//   method string
+//   speedGBps float32
+//   displayPackets []Packet
+//   lastPacketTs int64
+// }
 
-func computeUDPChecksum(src, dst net.IP, udpHeader, udpPayload []byte) uint16 {
-    udpLength := uint16(len(udpHeader) + len(udpPayload))
+// type Change interface {
+//   Type() string
+// }
 
-    var sum uint32
+// func (c CorruptorManipulation) Type() string {
+//   return "corruptor"
+// }
 
-    // Sum pseudo-header
-    pseudoHeader := []byte{
-        src.To4()[0], src.To4()[1], src.To4()[2], src.To4()[3],
-        dst.To4()[0], dst.To4()[1], dst.To4()[2], dst.To4()[3],
-        0, 17,
-        byte(udpLength >> 8), byte(udpLength),
-    }
-    for i := 0; i < len(pseudoHeader); i += 2 {
-        sum += uint32(pseudoHeader[i])<<8 | uint32(pseudoHeader[i+1])
-    }
-
-    // Sum UDP header
-    for i := 0; i < len(udpHeader); i += 2 {
-        sum += uint32(udpHeader[i])<<8 | uint32(udpHeader[i+1])
-    }
-
-    // Sum UDP payload
-    for i := 0; i < len(udpPayload); i += 2 {
-        if i == len(udpPayload)-1 {
-            sum += uint32(udpPayload[i]) << 8 // If odd number of bytes, pad with zero
-        } else {
-            sum += uint32(udpPayload[i])<<8 | uint32(udpPayload[i+1])
-        }
-    }
-
-    // Finalize checksum calculation
-    for sum>>16 != 0 {
-        sum = (sum & 0xFFFF) + (sum >> 16)
-    }
-    return ^uint16(sum)
+type DelayerConfig struct{
+  MinDelay time.Duration `json:"MinDelay"`
+  MaxDelay time.Duration `json:"MaxDelay"`
 }
 
-func onesComplementAdd(a, b uint32) uint32 {
-  sum := a + b
-  return sum + (sum >> 16)
+type CorruptorConfig struct{
+  NumBitsToFlipPayload int `json:"numBitsToFlipPayload"`
+  L2HeaderCorruptionProbability float32 `json:"l2HeaderCorruptionProbability"`
+  L3HeaderCorruptionProbability float32 `json:"l3HeaderCorruptionProbability"`
 }
 
-// Fix UDP checksum which is for some reason based on src and dest IP addresses
-// from the IP packet header even though UDP is layer 4...
-func updateChecksumForNewIPs(oldChecksum []byte, oldSrc, oldDst, newSrc, newDst net.IP) uint16 {
-  if len(oldChecksum) != 2 {
-    panic("Checksum slice should be 2 bytes long")
-  }
-
-  oldChksum16 := uint16(oldChecksum[0])<<8 | uint16(oldChecksum[1])
-  var diff uint32
-
-  // Subtract effect of old IPs
-  for i := 0; i < 4; i++ {
-    diff = onesComplementAdd(diff, ^uint32(oldSrc[i])<<8 | ^uint32(oldDst[i]))
-  }
-
-  // Add effect of new IPs
-  for i := 0; i < 4; i++ {
-    diff = onesComplementAdd(diff, uint32(newSrc[i])<<8 | uint32(newDst[i]))
-  }
-
-  // Add the diff to the old checksum
-  newChecksum := onesComplementAdd(diff, uint32(oldChksum16))
-
-  return ^uint16(newChecksum)
-}
 
 type PacketManipulator interface {
-	Manipulate(packet *Packet)
-}
-
-type Corruptor struct{}
-
-func (c *Corruptor) Manipulate(packet *Packet) {
-	// flip 5 random bits from the packet's payload
-	for i := 0; i < 5; i++ {
-		randByte := rand.Intn(len(packet.payload))
-		randBit := uint(rand.Intn(8))
-		packet.payload[randByte] ^= 1 << randBit
-	}
+	Manipulate(packet *Packet, displayPacket *DisplayPacket)
+	DecideManipulations(packet *Packet, displayPacket *DisplayPacket)
 }
 
 type Delayer struct {
-	minDelay time.Duration
-	maxDelay time.Duration
+  cfg DelayerConfig
+  manip *DelayerManipulation
+  delayMs time.Duration
 }
 
-func NewDelayer(minDelay, maxDelay time.Duration) *Delayer {
-	return &Delayer{minDelay: minDelay, maxDelay: maxDelay}
+type Corruptor struct{
+  cfg CorruptorConfig
+  manip *CorruptorManipulation
 }
 
-func (d *Delayer) Manipulate(packet *Packet) {
-	randomDelay := d.minDelay + time.Duration(rand.Int63n(int64(d.maxDelay-d.minDelay)))
-	time.Sleep(randomDelay)
+type CorruptorManipulation struct{
+  Cfg CorruptorConfig `json:"cfg"`
+  HeaderBitFlips []HeaderBitFlip `json:"headerBitFlips"`
+  PayloadBitFlips []PayloadBitFlip `json:"payloadBitFlips"`
 }
 
-func Dispatcher(iface *water.Interface, tun2EthQ chan Packet, manipulators []PacketManipulator) error {
+type DelayerManipulation struct{
+  Cfg DelayerConfig `json:"cfg"`
+  DelayMs int `json:"delayMs"`
+  delay time.Duration
+}
+
+type DelayApplied struct{
+  DelayMs int `json:"delayMs"`
+  PrevValue string `json:"prevValue"`
+  NewValue string `json:"newValue"`
+}
+
+type HeaderBitFlip struct{
+  HeaderLayer int `json:"headerLayer"`
+  FieldName string `json:"fieldName"`
+  PrevValue string `json:"prevValue"`
+  NewValue string `json:"newValue"`
+}
+
+type PayloadBitFlip struct{
+  Byte int `json:"byte"`
+  Bit int `json:"bit"`
+  PrevValue string `json:"prevValue"`
+  NewValue string `json:"newValue"`
+}
+
+func NewCorruptor(corruptorConfig CorruptorConfig) *Corruptor {
+  return &Corruptor{cfg: corruptorConfig, manip: nil}
+}
+
+func NewCorruptorConfig(numBitsToFlipPayload int, l2HeaderCorruptionProbability, l3HeaderCorruptionProbability float32 ) *CorruptorConfig {
+  return &CorruptorConfig{NumBitsToFlipPayload: numBitsToFlipPayload,
+    L2HeaderCorruptionProbability: l2HeaderCorruptionProbability,
+    L3HeaderCorruptionProbability: l3HeaderCorruptionProbability,
+  }
+}
+
+func NewDelayer(delayerConfig DelayerConfig) *Delayer {
+  return &Delayer{cfg: delayerConfig, manip: nil, delayMs: 0}
+}
+
+func NewDelayerConfig(minDelay, maxDelay time.Duration) *DelayerConfig {
+  return &DelayerConfig{MinDelay: minDelay, MaxDelay: maxDelay}
+}
+
+func (d *Delayer) DecideManipulations(packet *Packet, displayPacket *DisplayPacket) {
+	randomDelay := d.cfg.MinDelay + time.Duration(rand.Int63n(int64(d.cfg.MaxDelay-d.cfg.MinDelay)))
+  manip := DelayerManipulation{
+    Cfg: d.cfg,
+    DelayMs: int(randomDelay.Milliseconds()),
+    delay: randomDelay,
+  }
+  d.manip = &manip
+  delayerManipDataStr, err := json.Marshal(manip)
+  if err != nil {
+    log.Printf("error calling json.Marshal to json-string-encode delayerManipulation: %v\n", err)
+    return
+  }
+  manipulation := Manipulation{
+    ManipulatorType: "delayer", 
+    Data: string(delayerManipDataStr),
+  }
+  displayPacket.Manips = append(displayPacket.Manips, manipulation)
+}
+
+func (d *Delayer) Manipulate(packet *Packet, displayPacket *DisplayPacket) {
+  if d.manip == nil {
+    log.Fatal().Msg("Logic error or witchcraft has occured??! you called Manipulate() without saturating d.manip!!")
+  }
+	time.Sleep(d.manip.delay)
+}
+
+func (c *Corruptor) DecideManipulations(packet *Packet, displayPacket *DisplayPacket) {
+  // decide how to corrupt headers  
+  var headerBitFlips []HeaderBitFlip
+  // TODO: append to this by implementing the following TODOS...
+  if c.cfg.L2HeaderCorruptionProbability > 0 {
+    // TODO: implement corruption on ip header
+    // TODO: implement tracking of modifications to ipHeader via
+    // some sort of string encoding based on the IpHeader struct fields
+  }
+  if c.cfg.L3HeaderCorruptionProbability > 0 {
+    // TODO: implement corruption on udp header
+    // TODO: implement tracking of modifications to udpHeader via
+    // some sort of string encoding based on the UdpHeader struct fields
+  }
+
+  // decide how to corrupt payload  
+  payloadStart := 8 // Start corrupting after the first 8 bytes of the payload
+  if len(packet.payload) <= payloadStart {
+    return
+  }
+
+  payloadBitFlips := make([]PayloadBitFlip, c.cfg.NumBitsToFlipPayload)
+  for i := 0; i < c.cfg.NumBitsToFlipPayload; i++ {
+    randByte := payloadStart + rand.Intn(len(packet.payload)-payloadStart)
+    randBit := uint(rand.Intn(8))
+    prevValue := packet.payload[randByte]
+    bitMask := byte(1 << randBit)
+    newValue := prevValue ^ bitMask // Calculate newValue by XORing prevValue with the bitMask
+
+    payloadBitFlips[i] = PayloadBitFlip{
+      Byte: randByte,
+      Bit: int(randBit),
+      PrevValue: string(prevValue),
+      NewValue: string(newValue),
+    }
+  }
+
+  corruptorManipulation := &CorruptorManipulation{
+    Cfg: c.cfg,
+    HeaderBitFlips: headerBitFlips,
+    PayloadBitFlips: payloadBitFlips,
+  }
+  c.manip = corruptorManipulation
+
+  corruptorManipDataStr, err := json.Marshal(corruptorManipulation)
+  if err != nil {
+    log.Printf("error calling json.Marshal to json-string-encode corruptorManipulation: %v\n", err)
+    return
+  }
+  manipulation := Manipulation{
+    ManipulatorType: "corruptor", 
+    Data: string(corruptorManipDataStr),
+  }
+  displayPacket.Manips = append(displayPacket.Manips, manipulation)
+}
+
+func (c *Corruptor) Manipulate(packet *Packet, displayPacket *DisplayPacket) {
+  if c.manip == nil {
+    log.Fatal().Msg("Logic error or witchcraft has occured??! you called Manipulate() without saturating d.manip!!")
+  }
+  // Applying payload bit flips
+  for _, flip := range c.manip.PayloadBitFlips {
+    packet.payload[flip.Byte] ^= 1 << flip.Bit
+  }
+  // TODO: assert that packet.payload[flip.Byte] = c.manip.NewValue or whatever
+
+  // TODO: Apply header bit flips when implemented
+}
+
+func Dispatcher(iface *water.Interface, tun2EthQ chan Packet, displayPacketQ chan InfoUpdate, manipulators []PacketManipulator) error {
   log.Debug().Msgf("hi")
 
-  // TODO1
-  // sessions := make(map[string]net.IP) // no idea if this is concurrency safe hehe
+  // connections := make(map[string]Connection) // not concurrency safe, would need a lock: VVVVVVVVVVVVVVVVV
+  // lock := sync.RWMutex{} // this works but its easier to just use cmap (concurrent-map)
+  PP.connections = cmap.New[*Connection]()
+  // also, major TODO: would be to look closely on if this has a major performance impact (quite possible!) and if so we'll have to do an append-only data system instead of having individual request handler coroutines sharing the map!
+
+
   for {
     buf := make([]byte, maxIPPacketSize)
     n, err := iface.Read(buf)
@@ -183,113 +245,107 @@ func Dispatcher(iface *water.Interface, tun2EthQ chan Packet, manipulators []Pac
     }
 
     go func(buf []byte, buf_len int) {
-      startTime := time.Now()
-      startTime = startTime
+      // startTime := time.Now()
 
-      // get the version xxxx0000 is the version in the first byte
-      version := buf[0] >> 4
-      if int(version) != 4 {
-        return // exit if not ipv4
-      }
-      // log.Debug().Msgf("buf_len: %d", buf_len)
-
-      header, err := ipv4.ParseHeader(buf)
-      if err != nil {
-        fmt.Printf("Error parsing header")
-        return 
-      }
-      oldSrc := header.Src
-      oldDst := header.Dst
-
-      // TODO1
-      header.Dst = config.Config.OFaceAddr // TODO: return addr table
-      header.Src = config.Config.OFaceAddr
-      // right so atm we have config.Config.OFaceAddr, config.Config.OFaceNetwork
-      //        = net.ParseCIDR(config.Config.OFaceCidrStr)
-
-      // so, we need to store a src ip and port for a certain dst ip + port combo
-      // so that if they reply @ the proxy, we know who to fwd their reply to.
-      // ie.
-      // if you send a packet to 69.69.69.4:5000 w/ src=192.168.0.1:26738,
-      // we'll look up the [oldDstIP, oldSrcPort, oldDstPort] and not find any session
-      //                   [69.69.69.4, 26738. created key for it.,    5000     ]
-      // (store it with reversed ports from the search!)
-      //                                     oldDstIP,   oldDstPort, oldSrcPort
-      // we'll store that session as mapping [69.69.69.4, 5000,      26738]     to [192.168.0.1]
-      // and we fwd that to 127.0.0.4:5000 w/ src=69.69.69.4:26738,  <-- untouched src port and dst port!
-      //                                      [oldDstIP,oldSrcPort,oldDstPort]->oldSrcIp
-      //
-      // lets say server replies @ 69.69.69.4:26738 w/ src=127.0.0.4:5000
-      //
-      // then we'll look up [oldDstIP, oldSrcPort, oldDstPort] so sessions[69.69.69.4, 5000, 26738]
-      // and retrieve the IP [192.168.0.1] associated with the already known dst port 26738.
-
-      // TODO1
-      // header.Src = config.Config.IFaceAddr
-      // header.Src = oldDst
-      header.TotalLen = len(buf)
-      header.Checksum = 0 // checksum is recalculated in the socket write
-
-      payload := buf[header.Len:]
-
-      if (header.Protocol == 6) {
-        // TODO: handle TCP
-      } else if (header.Protocol == 17) { // UDP
-        // Fix UDP checksum which is for some reason based on src and dest IP addresses
-        // from the IP packet header even though UDP is layer 4... 
-        udpStart := header.Len
-        udpHeader := buf[udpStart : udpStart+8] // 8 bytes of UDP header
-        // please get the UDP src and dst port for me from bytes to uint16 here
-        udpPayload := buf[udpStart+8 : buf_len]
-
-        // Assuming udpHeader is a slice of bytes containing at least the first 8 bytes of the UDP header
-        udpSrcPort := binary.BigEndian.Uint16(udpHeader[0:2]) // Source port is the first 2 bytes
-        udpDstPort := binary.BigEndian.Uint16(udpHeader[2:4]) // Destination port is the next 2 bytes
-        fmt.Printf("UDP Source Port: %d, Destination Port: %d\n", udpSrcPort, udpDstPort)
-        fmt.Printf("oldSrc %s, oldDst: %s\n", oldSrc, oldDst)
-        // key := Key{
-        //   IP: oldDst,
-        //   Port1: udpSrcPort,
-        //   Port2: udpDstPort,
-        //   Protocol: "UDP"
-        // }
-
-        // if sessions[key.Hash()]; ok {
-        //   fmt.println("found session for key: (todo print key?)");
-        //   header.Dst = sessions[key.Hash()];
-        // } else {
-        //   key.Port1, key.Port2 = key.Port2, key.Port1;
-        //   sessions[key.Hash()] = oldSrc;
-        //   fmt.println("no found session. created key for it.");
-        // }
-
-        udpHeader[6] = 0
-        udpHeader[7] = 0
-        checksum := computeUDPChecksum(header.Src, header.Dst, udpHeader, udpPayload)
-        // fmt.Printf("checksum: 0x%x%x", byte(checksum >> 8), byte(checksum & 0xFF))
-        // checksum2 := updateChecksumForNewIPs(udpHeader[6:8], oldSrc, oldDst, header.Src, header.Dst)
-
-
-        udpHeader[6] = byte(checksum >> 8) // update header w/ new checksum
-        udpHeader[7] = byte(checksum & 0xFF)
-
-      } else {
-        fmt.Printf("Header was not UDP!: %v", header.Protocol)
-      }
-      packet := Packet{
-        header: header,
-        payload: payload,
+      if ok := HandleIpPacket(buf, buf_len, tun2EthQ, displayPacketQ, manipulators); !ok{
+        fmt.Printf("packet failed to parse")
       }
 
-      // Apply manipulations
-			for _, manipulator := range manipulators {
-				manipulator.Manipulate(&packet)
-			}
-
-      tun2EthQ <- packet
     }(buf, n)
   }
 }
+    //   tun2EthQ <- packet
+    // }(buf, n)
+
+
+   //      // Fix UDP checksum which is for some reason based on src and dest IP addresses
+   //      // from the IP packet header even though UDP is layer 4... 
+   //      udpStart := header.Len
+   //      udpHeader := buf[udpStart : udpStart+8] // 8 bytes of UDP header
+   //      udpPayload := buf[udpStart+8 : buf_len]
+			//
+   //      udpSrcPort := binary.BigEndian.Uint16(udpHeader[0:2]) // Source port is the first 2 bytes
+   //      udpDstPort := binary.BigEndian.Uint16(udpHeader[2:4]) // Destination port is the next 2 bytes
+			//
+   //      fmt.Printf("UDP Source Port: %d, Destination Port: %d\n", udpSrcPort, udpDstPort)
+   //      fmt.Printf("oldSrc %s, oldDst: %s\n", oldSrc, oldDst)
+			//
+   //      // for i := 0; i < len(config.Config.KnownClients); i++ {
+			//
+   //      hash := fmt.Sprintf("%s:%d-%d", udpSrcPort, udpDstPort, "UDP")
+			//
+   //      var curConnection Connection
+   //      var curConnectionHash string
+   //      if connect, ok := connections.Get(hash); ok {
+   //        // ayo WTF is connections.GetShard()?????
+			//
+   //        fmt.Printf("found connection: %d -> %d", udpSrcPort, udpDstPort)
+   //        connect.nPackets++
+   //        connect.lastPacketTs = time.Now().UnixMilli()
+   //        curConnection = connect
+			//
+   //        // TODO update recent 10 packets or whatever depending on timing
+   //      } else {
+   //        for i := 0; i < len(config.Config.KnownClients); i++ {
+   //          knownClient := config.Config.KnownClients[i]
+   //          p1 := uint16(knownClient.Port1)
+   //          p2 := uint16(knownClient.Port2)
+   //          ports_match := p1 == udpSrcPort && p2 == udpDstPort   
+   //          backward_match := p2 == udpSrcPort && p1 == udpDstPort
+			//
+   //          // todo mild refactor
+   //          if (ports_match || backward_match) && knownClient.Method == "UDP" {
+   //            curConnectionHash = fmt.Sprintf("%s:%d-%d", knownClient.Method, udpSrcPort, udpDstPort)
+   //            srcIP := net.ParseIP(knownClient.IP1)
+   //            dstIP := net.ParseIP(knownClient.IP2)
+   //            if backward_match{ // if 2->1 rather than 1->2 which is assumed
+   //              srcIP = net.ParseIP(knownClient.IP2)
+   //              dstIP = net.ParseIP(knownClient.IP1)
+   //            }
+   //            curConnection = Connection{
+   //              nPackets: 1,
+   //              srcIP: srcIP,
+   //              dstIP: dstIP,
+   //              srcPort: udpSrcPort,
+   //              dstPort: udpDstPort,
+   //              method: knownClient.Method,
+   //              speedGBps: 0,
+   //              displayPackets: make([]Packet, 0),
+   //            }
+   //            connections.Set(curConnectionHash, curConnection)
+   //          }
+   //        }
+   //      }
+			//
+			//
+			//
+   //      udpHeader[6] = 0
+   //      udpHeader[7] = 0
+   //      checksum := ComputeUDPChecksum(header.Src, header.Dst, udpHeader, udpPayload)
+   //      // fmt.Printf("checksum: 0x%x%x", byte(checksum >> 8), byte(checksum & 0xFF))
+   //      // checksum2 := UpdateChecksumForNewIPs(udpHeader[6:8], oldSrc, oldDst, header.Src, header.Dst)
+			//
+			//
+   //      udpHeader[6] = byte(checksum >> 8) // update header w/ new checksum
+   //      udpHeader[7] = byte(checksum & 0xFF)
+			//
+   //    } else {
+   //      fmt.Printf("Header was not UDP!: %v", header.Protocol)
+   //    }
+   //    packet := Packet{
+   //      header: header,
+   //      payload: payload,
+   //    }
+			//
+   //    // Apply manipulations
+			// for _, manipulator := range manipulators {
+			// 	manipulator.Manipulate(&packet)
+			// }
+
+  //     tun2EthQ <- packet
+  //   }(buf, n)
+  // }
+// }
 
 func PacketSender(conn *ipv4.RawConn, tun2EthQ chan Packet) error{
   startTime := time.Now()
@@ -298,11 +354,11 @@ func PacketSender(conn *ipv4.RawConn, tun2EthQ chan Packet) error{
   nPackets := 0
   for {
     packet := <-tun2EthQ
-    packetSizeBytes := packet.header.TotalLen
+    packetSizeBytes := packet.ipHeader.TotalLen
 		lifetimeBytesSent += packetSizeBytes
     // log.Debug().Msgf("payload_len: %d", len(packet.payload))
     // send packet
-    err := conn.WriteTo(packet.header, packet.payload, nil)
+    err := conn.WriteTo(packet.ipHeader, packet.payload, nil)
     if err != nil { // if connection is closed, exit nicely
       if errors.Is(err, net.ErrClosed) {
         return nil
