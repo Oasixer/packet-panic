@@ -4,8 +4,6 @@ import type { ConnectionData } from "@/Dashboard/connectionData";
 import Connection from "@/Dashboard/ConnectionsPane/Connection";
 import { sampleConnections } from "@/Dashboard/connectionData";
 
-// JSX;
-
 const ConnectionsPane: FC = () => {
   let _connections: JSX.Element[] = sampleConnections.map(
     (item: ConnectionData) => (

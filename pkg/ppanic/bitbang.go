@@ -1,6 +1,10 @@
 package ppanic
+
 import (
+	"encoding/binary"
+	"errors"
 	"net"
+
 	"golang.org/x/net/ipv4"
 )
 
@@ -28,16 +32,18 @@ type IpHeader struct {
 	Version  int         `json:"version"`    // protocol version
 	Len      int         `json:"len"`        // header length
 	TOS      int         `json:"tos"`        // type-of-service
+    // ip frag
 	TotalLen int         `json:"totalLen"`   // packet total length
 	ID       int         `json:"id"`         // identification
 	Flags    int         `json:"flags"`      // flags
 	FragOff  int         `json:"fragOff"`    // fragment offset
+    // not ip frag
 	TTL      int         `json:"ttl"`        // time-to-live
 	Protocol int         `json:"protocol"`   // next protocol
 	Checksum int         `json:"checksum"`   // checksum
-	Src      net.IP      `json:"srcIp"`        // source address
-	Dst      net.IP      `json:"dstIp"`        // destination address
-	Options  []byte      `json:"options"`    // options, extension headers
+	Src      string      `json:"srcIp"`        // source address
+	Dst      string      `json:"dstIp"`        // destination address
+	// Options  []byte      `json:"options"`    // options, extension headers
 }
 
  // Just copy an ipv4.Header struct to an identical struct for json purposes
@@ -52,8 +58,8 @@ func (h *IpHeader) CopyFromIPv4Header(ipv4Header *ipv4.Header) {
 	h.TTL = ipv4Header.TTL
 	h.Protocol = ipv4Header.Protocol
 	h.Checksum = ipv4Header.Checksum
-	h.Src = ipv4Header.Src
-	h.Dst = ipv4Header.Dst
+	h.Src = string(ipv4Header.Src)
+	h.Dst = string(ipv4Header.Dst)
 	h.Options = ipv4Header.Options
 }
 

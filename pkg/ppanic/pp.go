@@ -13,7 +13,7 @@ import (
 	"github.com/orcaman/concurrent-map/v2"
 	"golang.org/x/net/ipv4"
 
-	// "time"
+	"time"
 
 	"github.com/Oasixer/packet-panic/pkg/config"
 )
@@ -32,7 +32,7 @@ var PP pp
 
 const (
   updateDisplayPacketFreqMs = 500
-  nDisplayPackets = 10 
+  // nDisplayPackets = 10 
   nDisplayConnections = 8
 )
 
@@ -67,22 +67,36 @@ const (
 //   Padding        []byte  // variable length, optional
 //   Data           UdpHeader     // Payload - UDP struct defined later
 
+type SkippedPacket struct {
+  PacketSizeBits int
+  Ts int64
+}
+
+type ConnectionUpdate struct {
+  ConnectionId string `json:"id"`
+  // SpeedGBps float32 `json:"speedGBps"`
+  NewPackets []DisplayPacket `json:"newPackets"`
+  SkippedPackets []SkippedPacket `json:"skippedPackets"`
+}
+
 type ConnectionData struct {
   Id string `json:"id"`
   NPackets uint64 `json:"nPackets"`
   SrcIP net.IP `json:"srcIP"`
   DstIP net.IP `json:"dstIP"`
-  SrcPort uint16 `json:"srcPort"`
-  DstPort uint16 `json:"dstPort"`
+  srcPort uint16
+  dstPort uint16
+  SrcPort string `json:"srcPort"`
+  DstPort string `json:"dstPort"`
   Method string `json:"method"`
   SpeedGBps float32 `json:"speedGBps"`
-  DisplayPackets []DisplayPacket `json:"displayPackets"`
+  // DisplayPackets []DisplayPacket `json:"displayPackets"`
   LastPacketTs int64 `json:"lastPacketTs"`
 }
 
 type InfoUpdate struct {
-  Connections []ConnectionData `json:"connections"`
-  NewPackets []DisplayPacket `json:"newPackets"`
+  NewConnections []ConnectionData `json:"connections"`
+  ConnectionUpdates []ConnectionUpdate `json:"connectionUpdates"`
 }
 
 
@@ -92,11 +106,14 @@ type Manipulation struct {
 }
 
 type DisplayPacket struct {
+  Id string `json:"connectionId"`
+  ConnectionId string `json:"connectionId"`
   IpHeader IpHeader `json:"ipHeader"`
   UdpHeader UdpHeader `json:"udpHeader"`
   B64RawL2Header string  `json:"b64RawL2Header"` // base64 enc
   B64RawL3Header string  `json:"b64RawL3Header"` // base64 enc
   B64RawL3Payload string `json:"b64RawL3Payload"` // base64 enc
+  Ts int64 `json:"ts"`
 
   Manips []Manipulation `json:"manips"`
 }
@@ -215,11 +232,13 @@ func ConnectionFromKnownClients(knownClients []config.KnownClient, udpSrcPort, u
         NPackets: 1,
         SrcIP: srcIP,
         DstIP: dstIP,
-        SrcPort: udpSrcPort,
-        DstPort: udpDstPort,
+        SrcPort: string(udpSrcPort),
+        srcPort: udpSrcPort,
+        DstPort: string(udpDstPort),
+        dstPort: udpDstPort,
         Method: knownClient.Method,
         SpeedGBps: 0,
-        DisplayPackets: make([]DisplayPacket, 0),
+        // DisplayPackets: make([]DisplayPacket, 0),
         LastPacketTs: 0, // because we haven't assigned the packet yet...
       }, true
     } // end if
@@ -252,6 +271,7 @@ func handleUdpPacket(ip_Header* ipv4.Header, ipHeaderRaw []byte, udpRaw []byte, 
   
   var curConnection *ConnectionData = nil
 
+  nowMillis := time.Now().UnixMilli()
   if connect, ok := PP.connections.Get(hash); ok {
     curConnection = connect
   } else {
@@ -288,11 +308,14 @@ func handleUdpPacket(ip_Header* ipv4.Header, ipHeaderRaw []byte, udpRaw []byte, 
   // at this point all contents here have either been copied from bytes or encoded to string
   // so no mtability worries
   displayPacket := DisplayPacket{
+    Id: uuid.New().String(),
+    ConnectionId: curConnection.Id,
     IpHeader: displayIpHeader,
     UdpHeader: displayUdpHeader,
     B64RawL2Header: base64.StdEncoding.EncodeToString(ipHeaderRaw),
     B64RawL3Header: base64.StdEncoding.EncodeToString(udpHeader),
     B64RawL3Payload: base64.StdEncoding.EncodeToString(udpPayload),
+    Ts: nowMillis,
     Manips: make([]Manipulation, 0),
   }
 

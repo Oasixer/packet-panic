@@ -17,6 +17,7 @@ const ConnectionDetailsPane = () => {
       }}
     >
       <h1 className="font-thicc8 text-sz4xl text-white">Connection Details</h1>
+      {/* add graph of connection here! */}
     </div>
   );
 };
