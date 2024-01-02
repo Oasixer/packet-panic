@@ -50,8 +50,8 @@ export enum IpHeaderField {
   ttl = "ttl",
   protocol = "protocol",
   checksum = "checksum",
-  srcIp = "srcIp",
-  dstIp = "dstIp",
+  srcIP = "srcIP",
+  dstIP = "dstIP",
 }
 
 const IP_HEADER_PROP = "ipHeaderRaw";
@@ -85,8 +85,8 @@ function udpLabelSubs(id: UdpHeaderField): string {
 //   ttl = "ttl" as any,
 //   proto = "protocol" as any,
 //   checksum = "checksum" as any,
-//   srcIp = "srcIp" as any,
-//   dstIp = "dstIp" as any,
+//   srcIP = "srcIP" as any,
+//   dstIP = "dstIP" as any,
 // }
 
 export const ipHeaderFields: Field[][] = [
@@ -149,7 +149,7 @@ export const ipHeaderFields: Field[][] = [
   ],
   [
     {
-      id: IpHeaderField.srcIp,
+      id: IpHeaderField.srcIP,
       startByte: 12,
       lenBytes: 4,
       splitBytesInFmt: true,
@@ -157,7 +157,7 @@ export const ipHeaderFields: Field[][] = [
   ],
   [
     {
-      id: IpHeaderField.dstIp,
+      id: IpHeaderField.dstIP,
       startByte: 16,
       lenBytes: 4,
       splitBytesInFmt: true,

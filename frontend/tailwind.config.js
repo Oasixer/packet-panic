@@ -72,6 +72,11 @@ export default {
     // 96	  24rem	    384px
 
     extend: {
+      spacing: {
+        "05": "2px",
+        "025": "1px",
+      },
+
       colors: {
         pink: {
           accent: "#f472b6",

@@ -20,11 +20,11 @@ export interface DisplayPacket {
   connectionId: number;
   ipHeaderRaw: string;
   l3HeaderRaw: string;
-  srcIp: string;
-  dstIp: string;
+  srcIP: string;
+  dstIP: string;
   srcPort: string;
   dstPort: string;
-  len: string;
+  len: number;
   // udpHeader: UdpHeader;
   // lengthBytes: number; // redundant with totalLen
 
@@ -61,7 +61,6 @@ export let sampleConnections: ConnectionData[] = [
     dstIP: "192.168.0.1",
     srcPort: "12345",
     dstPort: "8001",
-    len: "520",
     method: "UDP",
     speedGBps: 69,
     // displayPackets: [],
@@ -74,10 +73,10 @@ export let sampleConnections: ConnectionData[] = [
         ipHeaderRaw: "455802381a2b0000031104d2c0a80105efffffff",
         l3HeaderRaw: "13881f91000e04d2",
         srcIP: "192.168.0.1",
-        dstIP: "192.168.0.1",
+        dstIP: "223.150.1.1",
         srcPort: "12345",
         dstPort: "8001",
-        len: 520,
+        len: 456,
         ts: new Date().getTime(),
         tsFmt: fmtTs(new Date().getTime()),
         manips: [],
@@ -86,13 +85,13 @@ export let sampleConnections: ConnectionData[] = [
         id: 2,
         // packetNumLocal: 0,
         connectionId: 0,
-        ipHeaderRaw: "455802381a2b0000031104d2c0a80105efffffff",
+        ipHeaderRaw: "455811111a2b0000031104d2c0a801051aaaaaaf",
         l3HeaderRaw: "13881f91000e04d2",
         srcIP: "224.168.0.1",
         dstIP: "192.168.0.1",
         srcPort: "12345",
         dstPort: "8001",
-        len: 520,
+        len: 53,
         ts: new Date().getTime(),
         tsFmt: fmtTs(new Date().getTime()),
         manips: [],
@@ -117,7 +116,7 @@ export let sampleConnections: ConnectionData[] = [
         id: 1,
         // packetNumLocal: 0,
         connectionId: 0,
-        ipHeaderRaw: "455802381a2b0000031104d2c0a80105efffffff",
+        ipHeaderRaw: "455800151a2b0000031104d2c0a80105efffffff",
         l3HeaderRaw: "13881f91000e04d2",
         srcIP: "224.168.0.1",
         dstIP: "192.168.0.1",

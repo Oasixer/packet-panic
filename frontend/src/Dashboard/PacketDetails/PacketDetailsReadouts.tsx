@@ -43,20 +43,21 @@ export default class PacketDetailsReadouts extends Component<PacketDetailsReadou
 
         <HeaderTextReadout
           dataSignal={displayPacket}
-          propId={IpHeaderField.len}
+          propId={IpHeaderField.totalLen}
           packetTypeMeta={ipPacketMeta}
+          fmt={fmtPort} /* port := 2 bytes to display as int, like totalLen */
         />
 
         <HeaderTextReadout
           dataSignal={displayPacket}
-          propId={IpHeaderField.srcIp}
+          propId={IpHeaderField.srcIP}
           packetTypeMeta={ipPacketMeta}
           fmt={fmtIp}
         />
 
         <HeaderTextReadout
           dataSignal={displayPacket}
-          propId={IpHeaderField.dstIp}
+          propId={IpHeaderField.dstIP}
           packetTypeMeta={ipPacketMeta}
           fmt={fmtIp}
         />
