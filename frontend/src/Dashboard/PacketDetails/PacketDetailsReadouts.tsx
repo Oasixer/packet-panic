@@ -28,11 +28,7 @@ export default class PacketDetailsReadouts extends Component<PacketDetailsReadou
     const { displayPacket } = this.props;
     return (
       <div className="flex flex-row gap-1 flex-wrap">
-        <TextReadout
-          label="no"
-          propName="packetNum"
-          dataSignal={displayPacket}
-        />
+        <TextReadout label="no" propName="id" dataSignal={displayPacket} />
         <TextReadout
           label="ts"
           propName="ts"

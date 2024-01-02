@@ -1,3 +1,8 @@
+export interface TableField {
+  width: number;
+  base: Field;
+}
+
 export interface Field {
   id: any; // eg. "proto"
   label?: string; // default to id
@@ -35,18 +40,18 @@ export function getFieldValueById(
 }
 
 export enum IpHeaderField {
-  version = <any>"version",
-  len = <any>"len",
-  tos = <any>"tos",
-  totalLen = <any>"totalLen",
-  id = <any>"id",
-  flags = <any>"flags",
-  fragOff = <any>"fragOff",
-  ttl = <any>"ttl",
-  protocol = <any>"protocol",
-  checksum = <any>"checksum",
-  srcIp = <any>"srcIp",
-  dstIp = <any>"dstIp",
+  version = "version",
+  len = "len",
+  tos = "tos",
+  totalLen = "totalLen",
+  id = "id",
+  flags = "flags",
+  fragOff = "fragOff",
+  ttl = "ttl",
+  protocol = "protocol",
+  checksum = "checksum",
+  srcIp = "srcIp",
+  dstIp = "dstIp",
 }
 
 const IP_HEADER_PROP = "ipHeaderRaw";

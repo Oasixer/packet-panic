@@ -12,10 +12,10 @@ export type TextReadoutProps = {
 };
 
 export default class TextReadout extends Component<TextReadoutProps> {
-  readoutValue = signal<string>("blah");
   render() {
     const { label, dataSignal, propName, fmt } = this.props;
-    // this.readoutValue.value = "DDD"
+    console.log("propName", propName);
+    console.log("dataSignal.value:", dataSignal.value);
     let _fmt = fmt;
     if (_fmt === undefined) {
       _fmt = (stringy: string) => {

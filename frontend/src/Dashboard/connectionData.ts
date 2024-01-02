@@ -1,6 +1,4 @@
-// import type { DisplayPacket } from "./"
-//
-//
+import { fmtTs } from "./formatters";
 export const PACKET_Q_LEN = 100;
 
 enum Styling {
@@ -9,11 +7,24 @@ enum Styling {
   FMT = 2,
 }
 
+export enum ConnectionField {
+  id = "id",
+  proto = "proto",
+  srcPort = "srcPort",
+  dstPort = "dstPort",
+}
+
 export interface DisplayPacket {
-  packetNum: number;
+  id: number; // eg. global autoincrementing packet num
+  // packetNumLocal: number; // eg. autoincrementing packet num within this connection
   connectionId: number;
   ipHeaderRaw: string;
   l3HeaderRaw: string;
+  srcIp: string;
+  dstIp: string;
+  srcPort: string;
+  dstPort: string;
+  len: string;
   // udpHeader: UdpHeader;
   // lengthBytes: number; // redundant with totalLen
 
@@ -21,6 +32,7 @@ export interface DisplayPacket {
   // b64RawL3Header: string; // base64 encoded string
   // b64RawL3Payload: string; // base64 encoded string
   ts: number;
+  tsFmt: string;
   // tsHHMMSSmmm?: string;
   manips: Manipulation[];
 }
@@ -36,6 +48,7 @@ export interface ConnectionData {
   // displayPackets: DisplayPacket[];
   lastPacketTs: number; // int64 in Go translates to number in TypeScript
   // _lastPacketTs: Date; // int64 in Go translates to number in TypeScript
+  packets: DisplayPacket[];
 }
 
 export let packetQ: DisplayPacket[] = [];
@@ -48,10 +61,45 @@ export let sampleConnections: ConnectionData[] = [
     dstIP: "192.168.0.1",
     srcPort: "12345",
     dstPort: "8001",
+    len: "520",
     method: "UDP",
     speedGBps: 69,
     // displayPackets: [],
     lastPacketTs: 0,
+    packets: [
+      {
+        id: 0,
+        // packetNumLocal: 0,
+        connectionId: 0,
+        ipHeaderRaw: "455802381a2b0000031104d2c0a80105efffffff",
+        l3HeaderRaw: "13881f91000e04d2",
+        srcIP: "192.168.0.1",
+        dstIP: "192.168.0.1",
+        srcPort: "12345",
+        dstPort: "8001",
+        len: 520,
+        ts: new Date().getTime(),
+        tsFmt: fmtTs(new Date().getTime()),
+        manips: [],
+      },
+      {
+        id: 2,
+        // packetNumLocal: 0,
+        connectionId: 0,
+        ipHeaderRaw: "455802381a2b0000031104d2c0a80105efffffff",
+        l3HeaderRaw: "13881f91000e04d2",
+        srcIP: "224.168.0.1",
+        dstIP: "192.168.0.1",
+        srcPort: "12345",
+        dstPort: "8001",
+        len: 520,
+        ts: new Date().getTime(),
+        tsFmt: fmtTs(new Date().getTime()),
+        manips: [],
+
+        // lengthBytes:
+      },
+    ],
   },
   {
     id: 1,
@@ -64,6 +112,25 @@ export let sampleConnections: ConnectionData[] = [
     speedGBps: 0.42,
     // displayPackets: [],
     lastPacketTs: 0,
+    packets: [
+      {
+        id: 1,
+        // packetNumLocal: 0,
+        connectionId: 0,
+        ipHeaderRaw: "455802381a2b0000031104d2c0a80105efffffff",
+        l3HeaderRaw: "13881f91000e04d2",
+        srcIP: "224.168.0.1",
+        dstIP: "192.168.0.1",
+        srcPort: "12345",
+        dstPort: "8001",
+        len: 520,
+        ts: new Date().getTime(),
+        tsFmt: fmtTs(new Date().getTime()),
+        manips: [],
+
+        // lengthBytes:
+      },
+    ],
   },
 ];
 

@@ -7,6 +7,7 @@ import { Signal } from "@preact/signals";
 
 import Accordion from "@/Dashboard/General/Accordion";
 import { Table } from "@/Dashboard/General/Table";
+import type { HeaderField } from "@/Dashboard/General/Table";
 import ConnectionListIcon from "@/Dashboard/Icons/ConnectionListIcon2";
 import type { ConnectionData } from "@/Dashboard/connectionData";
 
@@ -19,15 +20,12 @@ type ConnectionListProps = {
 
 export default class ConnectionList extends Component<ConnectionListProps> {
   render() {
-    const columnStructure = [
+    const headerFields: HeaderField[] = [
       { propName: "id", width: 40 },
       { propName: "method", label: "proto", width: 40 },
       { propName: "srcPort", width: 60 },
       { propName: "dstPort", width: 60 },
     ];
-
-    // const table: JSX.Element = (
-    // );
 
     return (
       <Accordion
@@ -35,7 +33,7 @@ export default class ConnectionList extends Component<ConnectionListProps> {
         icon={<ConnectionListIcon />}
         content={
           <Table
-            columnStructure={columnStructure}
+            headerFields={headerFields}
             selectedSignal={this.props.selected}
             dataSignal={this.props.connections}
           />

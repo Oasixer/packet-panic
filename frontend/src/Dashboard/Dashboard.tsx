@@ -20,10 +20,10 @@ export interface ComponentState {
 export interface DashboardComponentSignals {
   connectionList: TableComponentState;
   connectionDetails: ComponentState;
-  connectionPackets: TableComponentState;
+  connectionPackets: ComponentState;
   connectionSpeedGraph: ComponentState;
   packetList: ComponentState;
-  allPackets: ComponentState;
+  allPackets: TableComponentState;
   savedPackets: ComponentState;
   packetDetails: ComponentState;
   packetManips: ComponentState;
@@ -36,13 +36,20 @@ export const dashboardComponentSignals: DashboardComponentSignals = {
     selectedItemSignal: signal<number>(0),
   },
   connectionDetails: { accordionEnableSignal: signal<boolean>(true) },
+  // connectionPackets: {
+  //   base: { accordionEnableSignal: signal<boolean>(false) },
+  //   selectedItemSignal: signal<number>(0),
+  // },
   connectionPackets: {
+    accordionEnableSignal: signal<boolean>(true),
+  },
+  connectionSpeedGraph: { accordionEnableSignal: signal<boolean>(false) },
+  // packetList: { accordionEnableSignal: signal<boolean>(false) },
+  packetList: { accordionEnableSignal: signal<boolean>(true) },
+  allPackets: {
     base: { accordionEnableSignal: signal<boolean>(false) },
     selectedItemSignal: signal<number>(0),
   },
-  connectionSpeedGraph: { accordionEnableSignal: signal<boolean>(false) },
-  packetList: { accordionEnableSignal: signal<boolean>(false) },
-  allPackets: { accordionEnableSignal: signal<boolean>(false) },
   savedPackets: { accordionEnableSignal: signal<boolean>(false) },
   packetDetails: { accordionEnableSignal: signal<boolean>(true) },
   packetManips: { accordionEnableSignal: signal<boolean>(false) },
@@ -53,20 +60,40 @@ export default class Dashboard extends Component {
   render() {
     const connections = signal<ConnectionData[]>(sampleConnections);
     // const selectedConnectionSignal = signal<number>(0);
-    const packets = signal<DisplayPacket[]>([
-      {
-        packetNum: 0,
-        connectionId: 1,
-        ipHeaderRaw: "455802381a2b0000031104d2c0a80105efffffff",
-        l3HeaderRaw: "13881f91000e04d2",
-        ts: new Date().getTime(),
-        manips: [],
-        // lengthBytes:
-      },
-    ]);
-    const selectedPacketNSignal = signal<number>(0);
+
+    // TODO: avoid re-sorting!!!!!!!!!11
+
+    const packets = computed(() => {
+      const allPackets: DisplayPacket[] = connections.value.flatMap(
+        (connection) => connection.packets,
+      );
+
+      // Sort the packets by their id
+      allPackets.sort((a, b) => a.id - b.id);
+
+      return allPackets;
+    });
+    // const packets = signal<DisplayPacket[]>([
+    //   {
+    //     id: 0,
+    //     // packetNumLocal: 0,
+    //     connectionId: 1,
+    //     ipHeaderRaw: "455802381a2b0000031104d2c0a80105efffffff",
+    //     l3HeaderRaw: "13881f91000e04d2",
+    //     ts: new Date().getTime(),
+    //     manips: [],
+    //     // lengthBytes:
+    //   },
+    // ]);
+    // const selectedPacketNSignal = signal<number>(0);
     const selectedPacketSignal: Signal<DisplayPacket> = computed(() => {
-      return packets.value[selectedPacketNSignal.value];
+      return packets.value.find((x) => {
+        return (
+          x.id === dashboardComponentSignals.allPackets.selectedItemSignal.value
+        );
+      });
+      dashboardComponentSignals.allPackets.selectedItemSignal.value;
+      // ];
     });
     return (
       <div

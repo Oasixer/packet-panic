@@ -49,20 +49,20 @@ export default class ConnectionsList extends Component<ConnectionDetailsProps> {
           <div className="flex flex-col flex-nowrap gap-1">
             <ConnectionReadouts connectionData={connectionData} />
             <Accordion
+              title={"Connection Packets"}
+              icon={<VStackIcon />}
+              content={<ConnectionPackets connectionData={connectionData} />}
+              openSignal={
+                dashboardComponentSignals.connectionPackets
+                  .accordionEnableSignal
+              }
+            />
+            <Accordion
               title="Connection Speed Graph"
               icon={<SpeedGraphIcon />}
               content={<ConnectionSpeedGraph placeholder="blah" />}
               openSignal={
                 dashboardComponentSignals.connectionSpeedGraph
-                  .accordionEnableSignal
-              }
-            />
-            <Accordion
-              title={"Connection Packets"}
-              icon={<VStackIcon />}
-              content={<ConnectionPackets connectionData={connectionData} />}
-              openSignal={
-                dashboardComponentSignals.connectionPackets.base
                   .accordionEnableSignal
               }
             />

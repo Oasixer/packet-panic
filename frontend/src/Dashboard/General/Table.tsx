@@ -3,26 +3,27 @@ import { Component, JSX } from "preact";
 import PlusDropdownIcon from "@/Dashboard/Icons/PlusDropdownIcon";
 import { Signal } from "@preact/signals";
 
-type ColumnStructure = {
+export type HeaderField = {
   propName: string;
   label?: string;
   width: number;
 };
 
 type TableProps = {
-  columnStructure: ColumnStructure[];
+  // columnStructure: ColumnStructure[];
+  headerFields: HeaderField[];
   selectedSignal: Signal<number>;
   dataSignal: Signal<any[]>;
 };
 
 export class Table extends Component<TableProps> {
   render() {
-    const { columnStructure, dataSignal } = this.props;
+    const { headerFields, selectedSignal, dataSignal } = this.props;
     return (
       <div className="flex flex-col gap-1">
         {/* header row */}
         <div className="flex flex-row bg-blue-bgInner h-6 items-center gap-1 p-2">
-          {columnStructure.map((col) => (
+          {headerFields.map((col) => (
             <p
               key={col.propName}
               className="text-sz3.5 font-rubik5 text-green-accent"
@@ -37,16 +38,16 @@ export class Table extends Component<TableProps> {
         <div className="flex flex-col gap-1">
           {dataSignal.value.map((rowData, rowIdx) => (
             <div
-              className={`flex flex-row bg-blue-bgInner h-6 items-center p-1 gap-1 ${
-                this.props.selectedSignal.value === rowIdx
+              className={`flex flex-row bg-blue-bgInner h-6 items-center p-1 gap-1 cursor-pointer ${
+                selectedSignal.value === rowData.id
                   ? "border-2 border-green-accent"
                   : "border-2 border-transparent"
               }`}
               onClick={() => {
-                this.props.selectedSignal.value = rowIdx;
+                selectedSignal.value = rowData.id;
               }}
             >
-              {columnStructure.map((col) => (
+              {headerFields.map((col) => (
                 <p
                   key={col.propName}
                   className="text-sz3.5 font-rubik4"
