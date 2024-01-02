@@ -3,42 +3,29 @@
 //
 export const PACKET_Q_LEN = 100;
 
-interface IpHeader {
-  version: number;
-  len: number;
-  tos: number;
-  totalLen: number;
-  id: number;
-  flags: number;
-  fragOff: number;
-  ttl: number;
-  protocol: number;
-  checksum: number;
-  srcIp: string;
-  dstIp: string;
-  // options: Uint8Array; // Assuming []byte translates to Uint8Array in TypeScript
+enum Styling {
+  LABEL = 0,
+  HEX = 1,
+  FMT = 2,
 }
 
-interface UdpHeader {
-  srcPort: number;
-  dstPort: number;
-  length: number;
-  checksum: number;
-}
+export interface DisplayPacket {
+  packetNum: number;
+  connectionId: number;
+  ipHeaderRaw: string;
+  l3HeaderRaw: string;
+  // udpHeader: UdpHeader;
+  // lengthBytes: number; // redundant with totalLen
 
-interface DisplayPacket {
-  id: string;
-  connectionId: string;
-  ipHeader: IpHeader;
-  udpHeader: UdpHeader;
-  b64RawL2Header: string; // base64 encoded string
-  b64RawL3Header: string; // base64 encoded string
-  b64RawL3Payload: string; // base64 encoded string
+  // b64RawL2Header: string; // base64 encoded string
+  // b64RawL3Header: string; // base64 encoded string
+  // b64RawL3Payload: string; // base64 encoded string
   ts: number;
+  // tsHHMMSSmmm?: string;
   manips: Manipulation[];
 }
-interface ConnectionData {
-  id: string;
+export interface ConnectionData {
+  id: number;
   nPackets: number; // uint64 in Go translates to number in TypeScript
   srcIP: string; // Assuming net.IP can be represented as a string
   dstIP: string; // Assuming net.IP can be represented as a string
@@ -55,7 +42,7 @@ export let packetQ: DisplayPacket[] = [];
 
 export let sampleConnections: ConnectionData[] = [
   {
-    id: "1",
+    id: 0,
     nPackets: 1650,
     srcIP: "192.168.0.1",
     dstIP: "192.168.0.1",
@@ -67,7 +54,7 @@ export let sampleConnections: ConnectionData[] = [
     lastPacketTs: 0,
   },
   {
-    id: "2",
+    id: 1,
     nPackets: 238,
     srcIP: "192.241.6.1",
     dstIP: "192.168.0.2",

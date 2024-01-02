@@ -1,0 +1,5 @@
+
+design for packet header display:
+
+- make the styling type (hex, dec, or label) a signal so that in the future we don't have to display
+the packet label shit side by side perhaps and instead you can toggle 'hex' or whatever...

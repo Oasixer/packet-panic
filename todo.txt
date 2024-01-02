@@ -2,3 +2,13 @@
 2) make a packets accordion
 
 3) add to the packets datastructure: bytes per field + readable version of each
+
+
+import { JSX } from "preact";
+
+{
+  titleText?: string,
+  titleIcon?: JSX.element,
+}
+
+export const addRow = ()
