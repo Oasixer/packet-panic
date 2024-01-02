@@ -5,6 +5,7 @@ import ConnectionList from "@/Dashboard/ConnectionList/ConnectionList";
 import ConnectionDetails from "@/Dashboard/ConnectionDetails/ConnectionDetails";
 import PacketDetails from "@/Dashboard/PacketDetails/PacketDetails";
 import PacketList from "@/Dashboard/PacketList/PacketList";
+import PanelLayout from "@/Dashboard/General/PanelLayout";
 import { sampleConnections } from "@/Dashboard/connectionData";
 import type { ConnectionData, DisplayPacket } from "@/Dashboard/connectionData";
 
@@ -95,9 +96,13 @@ export default class Dashboard extends Component {
       dashboardComponentSignals.allPackets.selectedItemSignal.value;
       // ];
     });
+
+    const leftContentSize = signal<number>(300);
+    // const rightContentSize = signal<number>(300);
+
     return (
       <div
-        className="bg-blue-bgOuter p-4 flex flex-row gap-2"
+        className="bg-blue-bgOuter p-4 flex flex-row justify-center"
         style={{
           width: "100%",
           maxWidth: "100vw",
@@ -106,24 +111,32 @@ export default class Dashboard extends Component {
           maxHeight: "100vh",
         }}
       >
-        <div className="flex flex-col gap-1">
-          <ConnectionList
-            connections={connections}
-            selected={
-              dashboardComponentSignals.connectionList.selectedItemSignal
-            }
-          />
-          <ConnectionDetails
-            connections={connections}
-            selected={
-              dashboardComponentSignals.connectionList.selectedItemSignal
-            }
-          />
-        </div>
-        <div className="flex flex-col gap-1">
-          <PacketList />
-          <PacketDetails displayPacket={selectedPacketSignal} />
-        </div>
+        <PanelLayout
+          leftContent={
+            <div className="flex flex-col gap-1">
+              <ConnectionList
+                connections={connections}
+                selected={
+                  dashboardComponentSignals.connectionList.selectedItemSignal
+                }
+              />
+              <ConnectionDetails
+                connections={connections}
+                selected={
+                  dashboardComponentSignals.connectionList.selectedItemSignal
+                }
+              />
+            </div>
+          }
+          leftContentSize={leftContentSize}
+          rightContent={
+            <div className="flex flex-col gap-1">
+              {/* min-w-[800px]"> */}
+              <PacketList />
+              <PacketDetails displayPacket={selectedPacketSignal} />
+            </div>
+          }
+        />
       </div>
     );
   }

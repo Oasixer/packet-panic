@@ -31,7 +31,7 @@ export default class PacketDetails extends Component<PacketDetailsProps> {
         openSignal={
           dashboardComponentSignals.packetDetails.accordionEnableSignal
         }
-        maxWidth={800}
+        // maxWidth={800}
       />
     );
   }

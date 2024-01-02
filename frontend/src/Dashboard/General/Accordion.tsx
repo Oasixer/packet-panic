@@ -7,15 +7,20 @@ type AccordionProps = {
   title: string;
   icon: JSX.Element;
   content: JSX.Element;
-  maxWidth?: number;
+  // maxWidth?: number;
   openSignal: Signal<boolean>;
+  // forceWidth?: boolean;
 };
 
 export default class Accordion extends Component<AccordionProps> {
   render() {
-    const { title, icon, content, maxWidth, openSignal } = this.props;
+    const { title, icon, content, maxWidth, openSignal, forceWidth } =
+      this.props;
     return (
-      <div style={{ maxWidth: maxWidth }} className="flex flex-col flex-nowrap">
+      <div
+        // style={{ maxWidth: maxWidth, minWidth: forceWidth ? maxWidth : 0 }}
+        className="flex flex-col flex-nowrap"
+      >
         <div /* accordion header */
           className="flex flex-row flex-nowrap align-middle items-center bg-blue-bgInner h-8"
           onClick={() => {

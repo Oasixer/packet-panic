@@ -68,7 +68,7 @@ export default class ConnectionsList extends Component<ConnectionDetailsProps> {
             />
           </div>
         }
-        maxWidth={280}
+        // maxWidth={280}
         openSignal={
           dashboardComponentSignals.connectionDetails.accordionEnableSignal
         }

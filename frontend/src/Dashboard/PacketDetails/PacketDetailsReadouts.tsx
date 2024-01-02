@@ -74,7 +74,7 @@ export default class PacketDetailsReadouts extends Component<PacketDetailsReadou
           fmt={fmtPort}
         />
         <button
-          className="rounded-sm bg-green-subdued color-white px-2 opacity-85 text-sz3.5 font-rubik5"
+          className="rounded-sm bg-green-subdued color-white px-2 opacity-85 text-sz3.5 font-rubik5 min-h-6"
           onClick={() => {
             dashboardComponentSignals.connectionList.selectedItemSignal.value =
               displayPacket.value.connectionId;

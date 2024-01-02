@@ -38,7 +38,6 @@ export default class ConnectionList extends Component<ConnectionListProps> {
             dataSignal={this.props.connections}
           />
         }
-        maxWidth={280}
         openSignal={
           dashboardComponentSignals.connectionList.base.accordionEnableSignal
         }
