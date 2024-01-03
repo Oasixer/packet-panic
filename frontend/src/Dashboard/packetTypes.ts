@@ -8,8 +8,43 @@ export interface Field {
   label?: string; // default to id
   startByte: number;
   lenBytes: number;
-  fmt?: (input: string) => string;
+  color: string; // hex
+  hexFmt?: (input: string) => string;
   splitBytesInFmt?: boolean; // if included and true, group bytes eg. srcPort being 2 bytes representing 1 number whereas each ip byte should be displayed seperately.
+}
+export function splitBytes(
+  hexString: string,
+  tempOverride?: boolean,
+): string[] {
+  if (hexString.length === 1 || tempOverride) {
+    return [hexString];
+  }
+  if (!hexString || hexString.length % 2 !== 0) {
+    throw new Error("Invalid hex string");
+  }
+
+  // Split the hex string into chunks of two characters each
+  const bytes: string[] = [];
+  for (let i = 0; i < hexString.length; i += 2) {
+    bytes.push(hexString.substring(i, i + 2));
+  }
+
+  return bytes;
+}
+
+export function getFieldValueByField(field: Field, headerRaw: string): string {
+  const start = field.startByte * 2;
+  const end = start + field.lenBytes * 2;
+
+  if (field.lenBytes === 0.5) {
+    const byte = headerRaw.substring(start, start + 1);
+    const isUpperHalf = field.startByte % 1 === 0;
+    const hexValue = parseInt(byte, 16);
+    const nibble = isUpperHalf ? hexValue >> 4 : hexValue & 0x0f;
+    return nibble.toString(16);
+  }
+
+  return headerRaw.substring(start, end);
 }
 
 export function getFieldValueById(
@@ -24,19 +59,7 @@ export function getFieldValueById(
     if (field) break;
   }
   if (!field) throw new Error("Field not found");
-
-  const start = field.startByte * 2;
-  const end = start + field.lenBytes * 2;
-
-  if (field.lenBytes === 0.5) {
-    const byte = headerRaw.substring(start, start + 1);
-    const isUpperHalf = field.startByte % 1 === 0;
-    const hexValue = parseInt(byte, 16);
-    const nibble = isUpperHalf ? hexValue >> 4 : hexValue & 0x0f;
-    return nibble.toString(16);
-  }
-
-  return headerRaw.substring(start, end);
+  return getFieldValueByField(field, headerRaw);
 }
 
 export enum IpHeaderField {
@@ -96,21 +119,25 @@ export const ipHeaderFields: Field[][] = [
       // label: "ver",
       startByte: 0,
       lenBytes: 0.5,
+      color: "#FF7878", //
     },
     {
       id: IpHeaderField.len,
       startByte: 0.5,
       lenBytes: 0.5,
+      color: "#E5816F", // lorange
     },
     {
       id: IpHeaderField.tos,
       startByte: 1,
       lenBytes: 1,
+      color: "#BCC565", // yellow
     },
     {
       id: IpHeaderField.totalLen,
       startByte: 2,
       lenBytes: 2,
+      color: "#82D35D", // green
     },
   ],
   [
@@ -118,16 +145,19 @@ export const ipHeaderFields: Field[][] = [
       id: IpHeaderField.id,
       startByte: 4,
       lenBytes: 2,
+      color: "#557755", //dgreen
     },
     {
       id: IpHeaderField.flags,
       startByte: 6,
       lenBytes: 1,
+      color: "#6BC1D7",
     },
     {
       id: IpHeaderField.fragOff,
       startByte: 7,
       lenBytes: 1,
+      color: "#6165D7", // blue/ blurple
     },
   ],
   [
@@ -135,16 +165,19 @@ export const ipHeaderFields: Field[][] = [
       id: IpHeaderField.ttl,
       startByte: 8,
       lenBytes: 1,
+      color: "#6165D7", // blue/ blurple
     },
     {
       id: IpHeaderField.protocol,
       startByte: 9,
       lenBytes: 1,
+      color: "#A191FC", // lavender
     },
     {
       id: IpHeaderField.checksum,
       startByte: 10,
       lenBytes: 2,
+      color: "#9A7AC1", // violet
     },
   ],
   [
@@ -153,6 +186,7 @@ export const ipHeaderFields: Field[][] = [
       startByte: 12,
       lenBytes: 4,
       splitBytesInFmt: true,
+      color: "#D392CD", // pink
     },
   ],
   [
@@ -161,6 +195,7 @@ export const ipHeaderFields: Field[][] = [
       startByte: 16,
       lenBytes: 4,
       splitBytesInFmt: true,
+      color: "#893F5E", // pink
     },
   ],
 ];
@@ -178,11 +213,13 @@ export const udpHeaderFields: Field[][] = [
       id: UdpHeaderField.srcPort,
       startByte: 0,
       lenBytes: 2,
+      color: "#BFE9FB", // glacier
     },
     {
       id: UdpHeaderField.dstPort,
       startByte: 2,
       lenBytes: 2,
+      color: "#3DA58A", // greenaccent
     },
   ],
   [
@@ -190,11 +227,13 @@ export const udpHeaderFields: Field[][] = [
       id: UdpHeaderField.length,
       startByte: 4,
       lenBytes: 2,
+      color: "#BAB4B4", // greysAnatomy
     },
     {
       id: UdpHeaderField.checksum,
       startByte: 6,
       lenBytes: 2,
+      color: "#A2D699", // seaGreen
     },
   ],
 ];

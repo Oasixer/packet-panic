@@ -4,7 +4,7 @@ import { Component } from "preact";
 import HeaderTextReadout from "./HeaderTextReadout";
 import { UdpHeaderField, udpPacketMeta } from "@/Dashboard/packetTypes";
 
-const UDP_HEADER_PROP = "l3HeaderRaw";
+// const UDP_HEADER_PROP = "l3HeaderRaw";
 
 export type UdpHeaderTextReadoutProps = {
   dataSignal: Signal<any>;
@@ -14,16 +14,14 @@ export type UdpHeaderTextReadoutProps = {
 
 export default class UdpHeaderTextReadout extends Component<UdpHeaderTextReadoutProps> {
   render() {
-    const { dataSignal, propId } = this.props;
-    const label: string = HeaderField[propId];
-    const id: string = propId as unknown as string;
+    const { dataSignal, propId, fmt } = this.props;
+    const propIdStr: string = propId as unknown as string;
     return (
       <HeaderTextReadout
         dataSignal={dataSignal}
-        headerPropName={UDP_HEADER_PROP}
-        propLabel={label}
-        propId={id}
+        propId={propIdStr}
         packetTypeMeta={udpPacketMeta}
+        fmt={fmt}
       />
     );
   }

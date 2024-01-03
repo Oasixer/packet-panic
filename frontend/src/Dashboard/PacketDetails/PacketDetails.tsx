@@ -2,10 +2,11 @@ import { Signal, signal } from "@preact/signals";
 import { Component } from "preact";
 
 import BoxIcon from "@/Dashboard/Icons/BoxIcon";
+import RawIcon from "@/Dashboard/Icons/RawIcon";
 import Accordion from "@/Dashboard/General/Accordion";
 import PacketDetailsReadouts from "./PacketDetailsReadouts";
 import PacketManipulations from "./PacketManipulations";
-import RawPacket from "./RawPacket";
+import RawPacket from "./RawPacket/RawPacket";
 
 import { dashboardComponentSignals } from "@/Dashboard/Dashboard";
 import type { ConnectionData, DisplayPacket } from "@/Dashboard/connectionData";
@@ -25,7 +26,14 @@ export default class PacketDetails extends Component<PacketDetailsProps> {
           <div className="flex flex-col flex-nowrap gap-1">
             <PacketDetailsReadouts displayPacket={displayPacket} />
             <PacketManipulations />
-            <RawPacket />
+            <Accordion
+              title="Raw Packet"
+              icon={<RawIcon />}
+              content={<RawPacket displayPacket={displayPacket} />}
+              openSignal={
+                dashboardComponentSignals.rawPacket.accordionEnableSignal
+              }
+            />
           </div>
         }
         openSignal={
