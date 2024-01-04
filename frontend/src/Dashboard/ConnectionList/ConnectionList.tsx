@@ -22,7 +22,7 @@ export default class ConnectionList extends Component<ConnectionListProps> {
   render() {
     const headerFields: HeaderField[] = [
       { propName: "id", width: 40 },
-      { propName: "method", label: "proto", width: 40 },
+      { propName: "proto", width: 40 },
       { propName: "srcPort", width: 60 },
       { propName: "dstPort", width: 60 },
     ];

@@ -6,7 +6,7 @@ import RawIcon from "@/Dashboard/Icons/RawIcon";
 import Accordion from "@/Dashboard/General/Accordion";
 import PacketDetailsReadouts from "./PacketDetailsReadouts";
 import PacketManipulations from "./PacketManipulations";
-import RawPacket from "./RawPacket/RawPacket";
+import RawPacketSection from "./RawPacketSection/RawPacketSection";
 
 import { dashboardComponentSignals } from "@/Dashboard/Dashboard";
 import type { ConnectionData, DisplayPacket } from "@/Dashboard/connectionData";
@@ -29,7 +29,7 @@ export default class PacketDetails extends Component<PacketDetailsProps> {
             <Accordion
               title="Raw Packet"
               icon={<RawIcon />}
-              content={<RawPacket displayPacket={displayPacket} />}
+              content={<RawPacketSection displayPacket={displayPacket} />}
               openSignal={
                 dashboardComponentSignals.rawPacket.accordionEnableSignal
               }

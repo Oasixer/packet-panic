@@ -225,6 +225,10 @@ export default {
       // sz9xl: ["8rem" /* 128px */, { lineHeight: "1" }],
     },
     fontFamily: {
+      monoCP: [
+        '"Courier Prime"',
+        "sans-serif", // lol it literally has a serif.......
+      ],
       qs9: [
         '"Quicksand Variable", sans-serif',
         {

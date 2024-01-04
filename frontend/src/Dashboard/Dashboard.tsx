@@ -11,6 +11,7 @@ import type { ConnectionData, DisplayPacket } from "@/Dashboard/connectionData";
 
 export interface TableComponentState {
   selectedItemSignal?: Signal<number>;
+  // dataRows: Signal<any[]>;
   base: ComponentState; // composition baby
 }
 
@@ -35,6 +36,7 @@ export const dashboardComponentSignals: DashboardComponentSignals = {
   connectionList: {
     base: { accordionEnableSignal: signal<boolean>(true) },
     selectedItemSignal: signal<number>(0),
+    // dataRows: signal<any[]>([]),
   },
   connectionDetails: { accordionEnableSignal: signal<boolean>(true) },
   // connectionPackets: {
@@ -50,6 +52,7 @@ export const dashboardComponentSignals: DashboardComponentSignals = {
   allPackets: {
     base: { accordionEnableSignal: signal<boolean>(false) },
     selectedItemSignal: signal<number>(0),
+    // dataRows: signal<any[]>([]),
   },
   savedPackets: { accordionEnableSignal: signal<boolean>(false) },
   packetDetails: { accordionEnableSignal: signal<boolean>(true) },
@@ -93,8 +96,6 @@ export default class Dashboard extends Component {
           x.id === dashboardComponentSignals.allPackets.selectedItemSignal.value
         );
       });
-      dashboardComponentSignals.allPackets.selectedItemSignal.value;
-      // ];
     });
 
     const leftContentSize = signal<number>(300);
@@ -105,10 +106,10 @@ export default class Dashboard extends Component {
         className="bg-blue-bgOuter p-4 flex flex-row justify-center"
         style={{
           width: "100%",
-          maxWidth: "100vw",
-          overflow: "clip",
-          height: "100vh",
-          maxHeight: "100vh",
+          // maxWidth: "100vw",
+          // overflow: "clip",
+          // height: "100vh",
+          // maxHeight: "100vh",
         }}
       >
         <PanelLayout
@@ -132,7 +133,7 @@ export default class Dashboard extends Component {
           rightContent={
             <div className="flex flex-col gap-1">
               {/* min-w-[800px]"> */}
-              <PacketList />
+              <PacketList allPackets={packets} />
               <PacketDetails displayPacket={selectedPacketSignal} />
             </div>
           }

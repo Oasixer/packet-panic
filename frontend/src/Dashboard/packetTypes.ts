@@ -1,3 +1,5 @@
+import { FmtTypePropName } from "./formatters";
+
 export interface TableField {
   width: number;
   base: Field;
@@ -14,9 +16,15 @@ export interface Field {
 }
 export function splitBytes(
   hexString: string,
-  tempOverride?: boolean,
+  field: Field,
+  fmtProp: FmtTypePropName,
+  // tempOverride?: boolean,
 ): string[] {
-  if (hexString.length === 1 || tempOverride) {
+  let dontSplitBytes =
+    fmtProp === FmtTypePropName.labelFmt ||
+    (fmtProp === FmtTypePropName.decFmt && !field.splitBytesInFmt) ||
+    hexString.length === 1;
+  if (dontSplitBytes) {
     return [hexString];
   }
   if (!hexString || hexString.length % 2 !== 0) {

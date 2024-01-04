@@ -17,7 +17,11 @@ import {
   udpPacketMeta,
 } from "@/Dashboard/packetTypes";
 
-import type { ConnectionData, DisplayPacket } from "@/Dashboard/connectionData";
+import {
+  protoHexToStr,
+  type ConnectionData,
+  type DisplayPacket,
+} from "@/Dashboard/connectionData";
 
 export type PacketDetailsReadoutsProps = {
   displayPacket: Signal<DisplayPacket>;
@@ -26,6 +30,7 @@ export type PacketDetailsReadoutsProps = {
 export default class PacketDetailsReadouts extends Component<PacketDetailsReadoutsProps> {
   render() {
     const { displayPacket } = this.props;
+    console.log("displayPacket update: ", displayPacket.value);
     return (
       <div className="flex flex-row gap-1 flex-wrap">
         <TextReadout label="no" propName="id" dataSignal={displayPacket} />
@@ -35,10 +40,12 @@ export default class PacketDetailsReadouts extends Component<PacketDetailsReadou
           dataSignal={displayPacket}
           fmt={fmtTs}
         />
+        <TextReadout label="no" propName="id" dataSignal={displayPacket} />
         <HeaderTextReadout
           dataSignal={displayPacket}
           propId={IpHeaderField.protocol}
           packetTypeMeta={ipPacketMeta}
+          fmt={protoHexToStr}
         />
 
         <HeaderTextReadout
@@ -74,6 +81,7 @@ export default class PacketDetailsReadouts extends Component<PacketDetailsReadou
           packetTypeMeta={udpPacketMeta}
           fmt={fmtPort}
         />
+        <ToggleReadout propName="saved" dataSignal={displayPacket} />
         <button
           className="rounded-sm bg-green-subdued color-white px-2 opacity-85 text-sz3.5 font-rubik5 min-h-6"
           onClick={() => {

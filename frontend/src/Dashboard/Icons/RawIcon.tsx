@@ -5,7 +5,11 @@ import { faFileCode } from "@fortawesome/free-solid-svg-icons";
 // or faFileCode
 
 const Icon: FunctionalComponent = () => {
-  return <FontAwesomeIcon icon={faFileCode} />;
+  return (
+    <div className="px-05">
+      <FontAwesomeIcon icon={faFileCode} />
+    </div>
+  );
 };
 
 export default Icon;

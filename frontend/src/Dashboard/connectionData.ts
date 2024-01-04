@@ -1,4 +1,4 @@
-import { fmtTs } from "./formatters";
+import { fmtByteToDec, fmtTs } from "./formatters";
 export const PACKET_Q_LEN = 100;
 
 enum Styling {
@@ -14,6 +14,25 @@ export enum ConnectionField {
   dstPort = "dstPort",
 }
 
+export enum ProtoL3 {
+  TCP = "TCP",
+  UDP = "UDP",
+}
+
+export function protoHexToStr(protoHex: string): string {
+  const protoDec = fmtByteToDec(protoHex);
+  switch (protoDec) {
+    case "17":
+      return ProtoL3.UDP as string;
+    case "6":
+      return ProtoL3.TCP as string;
+    // add other cases for different protocol numbers
+    default:
+      return "idk";
+    // throw new Error("Unsupported protocol number");
+  }
+}
+
 export interface DisplayPacket {
   id: number; // eg. global autoincrementing packet num
   // packetNumLocal: number; // eg. autoincrementing packet num within this connection
@@ -24,6 +43,7 @@ export interface DisplayPacket {
   dstIP: string;
   srcPort: string;
   dstPort: string;
+  proto: ProtoL3;
   len: number;
   // udpHeader: UdpHeader;
   // lengthBytes: number; // redundant with totalLen
@@ -35,6 +55,7 @@ export interface DisplayPacket {
   tsFmt: string;
   // tsHHMMSSmmm?: string;
   manips: Manipulation[];
+  saved: boolean;
 }
 export interface ConnectionData {
   id: number;
@@ -43,7 +64,7 @@ export interface ConnectionData {
   dstIP: string; // Assuming net.IP can be represented as a string
   srcPort: string; // uint16 in Go translates to number in TypeScript
   dstPort: string; // uint16 in Go translates to number in TypeScript
-  method: string;
+  proto: ProtoL3;
   speedGBps: number; // float32 in Go translates to number in TypeScript
   // displayPackets: DisplayPacket[];
   lastPacketTs: number; // int64 in Go translates to number in TypeScript
@@ -61,7 +82,7 @@ export let sampleConnections: ConnectionData[] = [
     dstIP: "192.168.0.1",
     srcPort: "12345",
     dstPort: "8001",
-    method: "UDP",
+    proto: ProtoL3.TCP,
     speedGBps: 69,
     // displayPackets: [],
     lastPacketTs: 0,
@@ -76,10 +97,12 @@ export let sampleConnections: ConnectionData[] = [
         dstIP: "223.150.1.1",
         srcPort: "12345",
         dstPort: "8001",
+        proto: ProtoL3.TCP,
         len: 456,
         ts: new Date().getTime(),
         tsFmt: fmtTs(new Date().getTime()),
         manips: [],
+        saved: true,
       },
       {
         id: 2,
@@ -91,10 +114,12 @@ export let sampleConnections: ConnectionData[] = [
         dstIP: "192.168.0.1",
         srcPort: "12345",
         dstPort: "8001",
+        proto: ProtoL3.TCP,
         len: 53,
         ts: new Date().getTime(),
         tsFmt: fmtTs(new Date().getTime()),
         manips: [],
+        saved: false,
 
         // lengthBytes:
       },
@@ -107,7 +132,7 @@ export let sampleConnections: ConnectionData[] = [
     dstIP: "192.168.0.2",
     srcPort: "12345",
     dstPort: "6969",
-    method: "TCP",
+    proto: ProtoL3.UDP,
     speedGBps: 0.42,
     // displayPackets: [],
     lastPacketTs: 0,
@@ -122,10 +147,12 @@ export let sampleConnections: ConnectionData[] = [
         dstIP: "192.168.0.1",
         srcPort: "12345",
         dstPort: "8001",
+        proto: ProtoL3.UDP,
         len: 520,
         ts: new Date().getTime(),
         tsFmt: fmtTs(new Date().getTime()),
         manips: [],
+        saved: false,
 
         // lengthBytes:
       },
