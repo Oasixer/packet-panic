@@ -30,7 +30,7 @@ export default class Accordion extends Component<AccordionProps> {
           <div className="ml-2">{icon}</div>
 
           {/* accordion title */}
-          <p className="font-rubik5 text-sz4 text-white font-rubik4 ml-2 select-none">
+          <p className="font-rubik5 text-sz4 text-white ml-2 select-none">
             {title}
           </p>
 

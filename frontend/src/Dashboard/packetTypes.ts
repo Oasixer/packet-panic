@@ -8,8 +8,8 @@ export interface TableField {
 export interface Field {
   id: any; // eg. "proto"
   label?: string; // default to id
-  startByte: number;
-  lenBytes: number;
+  startBit: number;
+  lenBits: number;
   color: string; // hex
   hexFmt?: (input: string) => string;
   splitBytesInFmt?: boolean; // if included and true, group bytes eg. srcPort being 2 bytes representing 1 number whereas each ip byte should be displayed seperately.
@@ -41,12 +41,12 @@ export function splitBytes(
 }
 
 export function getFieldValueByField(field: Field, headerRaw: string): string {
-  const start = field.startByte * 2;
-  const end = start + field.lenBytes * 2;
+  const start = (field.startBit / 8) * 2;
+  const end = start + field.lenBits / 4;
 
-  if (field.lenBytes === 0.5) {
+  if (field.lenBits === 4) {
     const byte = headerRaw.substring(start, start + 1);
-    const isUpperHalf = field.startByte % 1 === 0;
+    const isUpperHalf = (field.startBit / 8) % 1 === 0;
     const hexValue = parseInt(byte, 16);
     const nibble = isUpperHalf ? hexValue >> 4 : hexValue & 0x0f;
     return nibble.toString(16);
@@ -120,79 +120,91 @@ function udpLabelSubs(id: UdpHeaderField): string {
 //   dstIP = "dstIP" as any,
 // }
 
+// ablah
+// #FF7878
+// #E5816F
+// #BCC565
+// #82D35D
+// #557755
+// #6BC1D7
+// #6165D7
+// #A191FC
+// #9A7AC1
+// #D392CD
+// #893F5E
+
 export const ipHeaderFields: Field[][] = [
   [
     {
       id: IpHeaderField.version,
-      // label: "ver",
-      startByte: 0,
-      lenBytes: 0.5,
+      startBit: 0,
+      lenBits: 4,
       color: "#FF7878", //
     },
     {
       id: IpHeaderField.len,
-      startByte: 0.5,
-      lenBytes: 0.5,
+      startBit: 4,
+      lenBits: 4,
       color: "#E5816F", // lorange
     },
     {
       id: IpHeaderField.tos,
-      startByte: 1,
-      lenBytes: 1,
+      startBit: 8,
+      lenBits: 8,
       color: "#BCC565", // yellow
     },
     {
       id: IpHeaderField.totalLen,
-      startByte: 2,
-      lenBytes: 2,
+      startBit: 16,
+      lenBits: 16,
       color: "#82D35D", // green
     },
   ],
   [
     {
       id: IpHeaderField.id,
-      startByte: 4,
-      lenBytes: 2,
+      startBit: 32,
+      lenBits: 16,
       color: "#557755", //dgreen
     },
     {
       id: IpHeaderField.flags,
-      startByte: 6,
-      lenBytes: 1,
+      startBit: 48,
+      lenBits: 8,
       color: "#6BC1D7",
     },
     {
       id: IpHeaderField.fragOff,
-      startByte: 7,
-      lenBytes: 1,
+      startBit: 56,
+      lenBits: 8,
       color: "#6165D7", // blue/ blurple
     },
   ],
   [
     {
       id: IpHeaderField.ttl,
-      startByte: 8,
-      lenBytes: 1,
+      startBit: 64,
+      lenBits: 8,
       color: "#6165D7", // blue/ blurple
     },
     {
       id: IpHeaderField.protocol,
-      startByte: 9,
-      lenBytes: 1,
+      startBit: 72,
+      lenBits: 8,
       color: "#A191FC", // lavender
     },
     {
       id: IpHeaderField.checksum,
-      startByte: 10,
-      lenBytes: 2,
+      startBit: 80,
+      lenBits: 16,
       color: "#9A7AC1", // violet
     },
   ],
   [
     {
       id: IpHeaderField.srcIP,
-      startByte: 12,
-      lenBytes: 4,
+      startBit: 96,
+      lenBits: 32,
       splitBytesInFmt: true,
       color: "#D392CD", // pink
     },
@@ -200,13 +212,100 @@ export const ipHeaderFields: Field[][] = [
   [
     {
       id: IpHeaderField.dstIP,
-      startByte: 16,
-      lenBytes: 4,
+      startBit: 128,
+      lenBits: 32,
       splitBytesInFmt: true,
       color: "#893F5E", // pink
     },
   ],
 ];
+// export const ipHeaderFields: Field[][] = [
+//   [
+//     {
+//       id: IpHeaderField.version,
+//       // label: "ver",
+//       startByte: 0,
+//       lenBytes: 0.5,
+//       color: "#FF7878", //
+//     },
+//     {
+//       id: IpHeaderField.len,
+//       startByte: 0.5,
+//       lenBytes: 0.5,
+//       color: "#E5816F", // lorange
+//     },
+//     {
+//       id: IpHeaderField.tos,
+//       startByte: 1,
+//       lenBytes: 1,
+//       color: "#BCC565", // yellow
+//     },
+//     {
+//       id: IpHeaderField.totalLen,
+//       startByte: 2,
+//       lenBytes: 2,
+//       color: "#82D35D", // green
+//     },
+//   ],
+//   [
+//     {
+//       id: IpHeaderField.id,
+//       startByte: 4,
+//       lenBytes: 2,
+//       color: "#557755", //dgreen
+//     },
+//     {
+//       id: IpHeaderField.flags,
+//       startByte: 6,
+//       lenBytes: 1,
+//       color: "#6BC1D7",
+//     },
+//     {
+//       id: IpHeaderField.fragOff,
+//       startByte: 7,
+//       lenBytes: 1,
+//       color: "#6165D7", // blue/ blurple
+//     },
+//   ],
+//   [
+//     {
+//       id: IpHeaderField.ttl,
+//       startByte: 8,
+//       lenBytes: 1,
+//       color: "#6165D7", // blue/ blurple
+//     },
+//     {
+//       id: IpHeaderField.protocol,
+//       startByte: 9,
+//       lenBytes: 1,
+//       color: "#A191FC", // lavender
+//     },
+//     {
+//       id: IpHeaderField.checksum,
+//       startByte: 10,
+//       lenBytes: 2,
+//       color: "#9A7AC1", // violet
+//     },
+//   ],
+//   [
+//     {
+//       id: IpHeaderField.srcIP,
+//       startByte: 12,
+//       lenBytes: 4,
+//       splitBytesInFmt: true,
+//       color: "#D392CD", // pink
+//     },
+//   ],
+//   [
+//     {
+//       id: IpHeaderField.dstIP,
+//       startByte: 16,
+//       lenBytes: 4,
+//       splitBytesInFmt: true,
+//       color: "#893F5E", // pink
+//     },
+//   ],
+// ];
 
 export enum UdpHeaderField {
   srcPort = <any>"srcPort",
@@ -219,29 +318,158 @@ export const udpHeaderFields: Field[][] = [
   [
     {
       id: UdpHeaderField.srcPort,
-      startByte: 0,
-      lenBytes: 2,
+      startBit: 0,
+      lenBits: 16,
       color: "#BFE9FB", // glacier
     },
     {
       id: UdpHeaderField.dstPort,
-      startByte: 2,
-      lenBytes: 2,
+      startBit: 16,
+      lenBits: 16,
       color: "#3DA58A", // greenaccent
     },
   ],
   [
     {
       id: UdpHeaderField.length,
-      startByte: 4,
-      lenBytes: 2,
+      startBit: 32,
+      lenBits: 16,
       color: "#BAB4B4", // greysAnatomy
     },
     {
       id: UdpHeaderField.checksum,
-      startByte: 6,
-      lenBytes: 2,
+      startBit: 48,
+      lenBits: 16,
       color: "#A2D699", // seaGreen
+    },
+  ],
+];
+
+// export const udpHeaderFields: Field[][] = [
+//   [
+//     {
+//       id: UdpHeaderField.srcPort,
+//       startByte: 0,
+//       lenBytes: 2,
+//       color: "#BFE9FB", // glacier
+//     },
+//     {
+//       id: UdpHeaderField.dstPort,
+//       startByte: 2,
+//       lenBytes: 2,
+//       color: "#3DA58A", // greenaccent
+//     },
+//   ],
+//   [
+//     {
+//       id: UdpHeaderField.length,
+//       startByte: 4,
+//       lenBytes: 2,
+//       color: "#BAB4B4", // greysAnatomy
+//     },
+//     {
+//       id: UdpHeaderField.checksum,
+//       startByte: 6,
+//       lenBytes: 2,
+//       color: "#A2D699", // seaGreen
+//     },
+//   ],
+// ];
+
+export enum TcpHeaderField {
+  srcPort = "srcPort",
+  dstPort = "dstPort",
+  sequenceNumber = "sequenceNumber",
+  ackNumber = "ackNumber",
+  headerLen = "headerLen",
+  reserved = "reserved",
+  flags = "flags",
+  window = "window",
+  checksum = "checksum",
+  urgentPointer = "urgentPointer",
+  options = "options",
+  padding = "padding",
+}
+
+export const tcpHeaderFields: Field[][] = [
+  [
+    {
+      id: TcpHeaderField.srcPort,
+      startByte: 0,
+      lenBytes: 2,
+      color: "#FF7878", // color1
+    },
+    {
+      id: TcpHeaderField.dstPort,
+      startByte: 2,
+      lenBytes: 2,
+      color: "#E5816F", // color2
+    },
+  ],
+  [
+    {
+      id: TcpHeaderField.sequenceNumber,
+      startByte: 4,
+      lenBytes: 4,
+      color: "#BCC565", // color3
+    },
+  ],
+  [
+    {
+      id: TcpHeaderField.ackNumber,
+      startByte: 8,
+      lenBytes: 4,
+      color: "#82D35D", // color4
+    },
+  ],
+  [
+    {
+      id: TcpHeaderField.headerLen,
+      startByte: 12,
+      lenBytes: 1 / 2,
+      color: "#557755", // color5
+    },
+    {
+      id: TcpHeaderField.reserved,
+      startByte: 13,
+      lenBytes: 3, // Note: This combines reserved (3 bits), flags (9 bits), and the first bit of window
+      color: "#6BC1D7", // color6
+    },
+  ],
+  [
+    {
+      id: TcpHeaderField.window,
+      startByte: 14,
+      lenBytes: 2, // Note: This starts from the second byte of the previous field
+      color: "#6165D7", // color7
+    },
+    {
+      id: TcpHeaderField.checksum,
+      startByte: 16,
+      lenBytes: 2,
+      color: "#A191FC", // color8
+    },
+  ],
+  [
+    {
+      id: TcpHeaderField.urgentPointer,
+      startByte: 18,
+      lenBytes: 2,
+      color: "#9A7AC1", // color9
+    },
+    {
+      id: TcpHeaderField.options,
+      startByte: 20,
+      lenBytes: 0, // Variable length, starts at 20, length determined dynamically
+      color: "#D392CD", // color10
+    },
+  ],
+  [
+    {
+      id: TcpHeaderField.padding,
+      startByte: 20, // Variable start, follows options
+      lenBytes: 0, // Variable length, determined dynamically
+      color: "#893F5E", // color11
     },
   ],
 ];
