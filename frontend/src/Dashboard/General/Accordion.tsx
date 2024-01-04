@@ -14,15 +14,14 @@ type AccordionProps = {
 
 export default class Accordion extends Component<AccordionProps> {
   render() {
-    const { title, icon, content, maxWidth, openSignal, forceWidth } =
-      this.props;
+    const { title, icon, content, openSignal } = this.props;
     return (
       <div
         // style={{ maxWidth: maxWidth, minWidth: forceWidth ? maxWidth : 0 }}
         className="flex flex-col flex-nowrap"
       >
         <div /* accordion header */
-          className="flex flex-row flex-nowrap align-middle items-center bg-blue-bgInner h-8"
+          className="flex flex-row flex-nowrap align-middle items-center bg-blue-bgInner h-8 cursor-pointer"
           onClick={() => {
             openSignal.value = !openSignal.value;
           }}
