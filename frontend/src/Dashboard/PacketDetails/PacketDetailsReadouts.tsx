@@ -22,6 +22,7 @@ import {
   type ConnectionData,
   type DisplayPacket,
 } from "@/Dashboard/connectionData";
+import ToggleProp from "@/Dashboard/General/ToggleProp";
 
 export type PacketDetailsReadoutsProps = {
   displayPacket: Signal<DisplayPacket>;
@@ -81,7 +82,7 @@ export default class PacketDetailsReadouts extends Component<PacketDetailsReadou
           packetTypeMeta={udpPacketMeta}
           fmt={fmtPort}
         />
-        <ToggleReadout propName="saved" dataSignal={displayPacket} />
+        <ToggleProp packetComputed={displayPacket} propName="saved" />
         <button
           className="rounded-sm bg-green-subdued color-white px-2 opacity-85 text-sz3.5 font-rubik5 min-h-6"
           onClick={() => {

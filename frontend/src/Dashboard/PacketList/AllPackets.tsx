@@ -20,6 +20,7 @@ export default class AllPackets extends Component<AllPacketsProps> {
       { propName: "id", label: "no", width: 40 },
       { propName: "proto", width: 40 },
       { propName: "tsFmt", label: "ts", width: 90 },
+      { propName: "connectionId", label: "conn", width: 40 },
       { propName: "len", width: 30 },
       // { propName: "saved", width: 50 },
       { propName: "srcPort", width: 60 },

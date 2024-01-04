@@ -45,8 +45,7 @@ export default class PacketList extends Component<PacketListProps> {
                   icon={<BookmarkIcon />}
                   content={<SavedPackets allPackets={allPackets} />}
                   openSignal={
-                    dashboardComponentSignals.allPackets.base
-                      .accordionEnableSignal
+                    dashboardComponentSignals.savedPackets.accordionEnableSignal
                   }
                 />
               </div>

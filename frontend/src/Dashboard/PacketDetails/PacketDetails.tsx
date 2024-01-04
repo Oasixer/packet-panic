@@ -12,12 +12,13 @@ import { dashboardComponentSignals } from "@/Dashboard/Dashboard";
 import type { ConnectionData, DisplayPacket } from "@/Dashboard/connectionData";
 
 export type PacketDetailsProps = {
-  displayPacket: Signal<DisplayPacket>;
+  // displayPacket: Signal<DisplayPacket>;
 };
 
 export default class PacketDetails extends Component<PacketDetailsProps> {
   render() {
-    const { displayPacket } = this.props;
+    console.log("PacketDetails->render()");
+    const displayPacket = dashboardComponentSignals.packetDetails.displayPacket;
     return (
       <Accordion
         title="Packet Details"
@@ -37,7 +38,7 @@ export default class PacketDetails extends Component<PacketDetailsProps> {
           </div>
         }
         openSignal={
-          dashboardComponentSignals.packetDetails.accordionEnableSignal
+          dashboardComponentSignals.packetDetails.base.accordionEnableSignal
         }
         // maxWidth={800}
       />

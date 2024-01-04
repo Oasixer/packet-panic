@@ -6,6 +6,7 @@ import TextReadout from "@/Dashboard/General/Readout/TextReadout/TextReadout";
 import ToggleReadout from "@/Dashboard/General/Readout/ToggleReadout";
 
 import type { ConnectionData } from "@/Dashboard/connectionData";
+import ToggleProp from "@/Dashboard/General/ToggleProp";
 
 export type ConnectionReadoutsProps = {
   connectionData: Signal<ConnectionData>;
@@ -16,7 +17,7 @@ export default class ConnectionReadouts extends Component<ConnectionReadoutsProp
     const { connectionData } = this.props;
     return (
       <div className="flex flex-row gap-1 flex-wrap">
-        <ToggleReadout propName="enabled" dataSignal={connectionData} />
+        <ToggleProp packetComputed={connectionData} propName="enabled" />
         <TextReadout propName="id" dataSignal={connectionData} />
         <TextReadout propName="proto" dataSignal={connectionData} />
         <TextReadout propName="srcIP" dataSignal={connectionData} />

@@ -32,6 +32,23 @@ export function protoHexToStr(protoHex: string): string {
     // throw new Error("Unsupported protocol number");
   }
 }
+export const dummyPacket: DisplayPacket = {
+  id: -1,
+  // packetNumLocal: 0,
+  connectionId: -1,
+  ipHeaderRaw: "",
+  l3HeaderRaw: "",
+  srcIP: "",
+  dstIP: "",
+  srcPort: "",
+  dstPort: "",
+  proto: ProtoL3.TCP,
+  len: 1,
+  ts: new Date().getTime(),
+  tsFmt: "",
+  manips: [],
+  saved: true,
+};
 
 export interface DisplayPacket {
   id: number; // eg. global autoincrementing packet num
@@ -72,7 +89,18 @@ export interface ConnectionData {
   packets: DisplayPacket[];
 }
 
-export let packetQ: DisplayPacket[] = [];
+// TODO: weird solution that i don't really like
+export function getPacketById_TODO_perf(
+  connectionData: ConnectionData,
+  packetId: number,
+) {
+  return connectionData.packets.find((x) => x.id === packetId);
+}
+// export function setPacketByIdx(
+//   connectionData: ConnectionData,
+//   packetIdx: number,
+//   packet: PacketData,
+// ) {}
 
 export let sampleConnections: ConnectionData[] = [
   {
@@ -140,7 +168,7 @@ export let sampleConnections: ConnectionData[] = [
       {
         id: 1,
         // packetNumLocal: 0,
-        connectionId: 0,
+        connectionId: 1,
         ipHeaderRaw: "455800151a2b0000031104d2c0a80105efffffff",
         l3HeaderRaw: "13881f91000e04d2",
         srcIP: "224.168.0.1",

@@ -6,12 +6,20 @@ import ConnectionDetails from "@/Dashboard/ConnectionDetails/ConnectionDetails";
 import PacketDetails from "@/Dashboard/PacketDetails/PacketDetails";
 import PacketList from "@/Dashboard/PacketList/PacketList";
 import PanelLayout from "@/Dashboard/General/PanelLayout";
-import { sampleConnections } from "@/Dashboard/connectionData";
+import {
+  dummyPacket,
+  getPacketById_TODO_perf,
+  sampleConnections,
+} from "@/Dashboard/connectionData";
 import type { ConnectionData, DisplayPacket } from "@/Dashboard/connectionData";
 
 export interface TableComponentState {
   selectedItemSignal?: Signal<number>;
-  // dataRows: Signal<any[]>;
+  dataRows: Signal<any[]>;
+  base: ComponentState; // composition baby
+}
+export interface PacketComponentState {
+  displayPacket: Signal<DisplayPacket>;
   base: ComponentState; // composition baby
 }
 
@@ -27,7 +35,7 @@ export interface DashboardComponentSignals {
   packetList: ComponentState;
   allPackets: TableComponentState;
   savedPackets: ComponentState;
-  packetDetails: ComponentState;
+  packetDetails: PacketComponentState;
   packetManips: ComponentState;
   rawPacket: ComponentState;
 }
@@ -36,7 +44,7 @@ export const dashboardComponentSignals: DashboardComponentSignals = {
   connectionList: {
     base: { accordionEnableSignal: signal<boolean>(true) },
     selectedItemSignal: signal<number>(0),
-    // dataRows: signal<any[]>([]),
+    dataRows: signal<any[]>([]),
   },
   connectionDetails: { accordionEnableSignal: signal<boolean>(true) },
   // connectionPackets: {
@@ -52,31 +60,58 @@ export const dashboardComponentSignals: DashboardComponentSignals = {
   allPackets: {
     base: { accordionEnableSignal: signal<boolean>(false) },
     selectedItemSignal: signal<number>(0),
-    // dataRows: signal<any[]>([]),
+    dataRows: signal<any[]>([]),
   },
   savedPackets: { accordionEnableSignal: signal<boolean>(false) },
-  packetDetails: { accordionEnableSignal: signal<boolean>(true) },
+  packetDetails: {
+    displayPacket: signal<DisplayPacket>(dummyPacket),
+    base: { accordionEnableSignal: signal<boolean>(true) },
+  },
   packetManips: { accordionEnableSignal: signal<boolean>(false) },
   rawPacket: { accordionEnableSignal: signal<boolean>(true) },
 };
 
+export function reloadSelectedPacketGlobal() {
+  dashboardComponentSignals.connectionList.dataRows.value = [
+    ...dashboardComponentSignals.connectionList.dataRows.value,
+  ];
+  // so we have to also reload that
+  dashboardComponentSignals.packetDetails.displayPacket.value = {
+    ...dashboardComponentSignals.packetDetails.displayPacket.value,
+  };
+}
+
 export default class Dashboard extends Component {
   render() {
-    const connections = signal<ConnectionData[]>(sampleConnections);
-    // const selectedConnectionSignal = signal<number>(0);
+    // const connections = signal<ConnectionData[]>(sampleConnections);
+    dashboardComponentSignals.connectionList.dataRows.value = sampleConnections;
+    // console.log(
+    //   "reloading connections, ",
+    //   dashboardComponentSignals.connectionList.dataRows.value,
+    // );
 
     // TODO: avoid re-sorting!!!!!!!!!11
 
     const packets = computed(() => {
-      const allPackets: DisplayPacket[] = connections.value.flatMap(
-        (connection) => connection.packets,
-      );
+      console.log("recomputing packets");
+      const allPackets: DisplayPacket[] =
+        dashboardComponentSignals.connectionList.dataRows.value.flatMap(
+          (connection) => connection.packets,
+        );
 
       // Sort the packets by their id
       allPackets.sort((a, b) => a.id - b.id);
 
       return allPackets;
     });
+    dashboardComponentSignals.allPackets.dataRows.value = packets.value;
+
+    dashboardComponentSignals.packetDetails.displayPacket.value =
+      dashboardComponentSignals.allPackets.dataRows.value.find((x) => {
+        return (
+          x.id === dashboardComponentSignals.allPackets.selectedItemSignal.value
+        );
+      });
     // const packets = signal<DisplayPacket[]>([
     //   {
     //     id: 0,
@@ -90,13 +125,20 @@ export default class Dashboard extends Component {
     //   },
     // ]);
     // const selectedPacketNSignal = signal<number>(0);
-    const selectedPacketSignal: Signal<DisplayPacket> = computed(() => {
-      return packets.value.find((x) => {
-        return (
-          x.id === dashboardComponentSignals.allPackets.selectedItemSignal.value
-        );
-      });
-    });
+    // selectedPacketSignal.value =
+    //   dashboardComponentSignals.allPackets.dataRows.value.find((x) => {
+    //     return (
+    //       x.id === dashboardComponentSignals.allPackets.selectedItemSignal.value
+    //     );
+    //   });
+    // const selectedPacketSignal: Signal<DisplayPacket> = computed(() => {
+    //   console.log("recomputing selectedPacket");
+    //   return dashboardComponentSignals.allPackets.dataRows.value.find((x) => {
+    //     return (
+    //       x.id === dashboardComponentSignals.allPackets.selectedItemSignal.value
+    //     );
+    //   });
+    // });
 
     const leftContentSize = signal<number>(300);
     // const rightContentSize = signal<number>(300);
@@ -116,13 +158,13 @@ export default class Dashboard extends Component {
           leftContent={
             <div className="flex flex-col gap-1">
               <ConnectionList
-                connections={connections}
+                connections={dashboardComponentSignals.connectionList.dataRows}
                 selected={
                   dashboardComponentSignals.connectionList.selectedItemSignal
                 }
               />
               <ConnectionDetails
-                connections={connections}
+                connections={dashboardComponentSignals.connectionList.dataRows}
                 selected={
                   dashboardComponentSignals.connectionList.selectedItemSignal
                 }
@@ -134,7 +176,7 @@ export default class Dashboard extends Component {
             <div className="flex flex-col gap-1">
               {/* min-w-[800px]"> */}
               <PacketList allPackets={packets} />
-              <PacketDetails displayPacket={selectedPacketSignal} />
+              <PacketDetails />
             </div>
           }
         />
