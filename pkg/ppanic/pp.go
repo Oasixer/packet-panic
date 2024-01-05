@@ -140,11 +140,14 @@ func HandleIpPacket(buf []byte, buf_len int, tun2EthQ chan Packet, displayPacket
   // oldDst := header.Dst
   // header.Src = config.Config.IFaceAddr
   // header.Src = oldDst
-  header.TotalLen = buf_len
+  log.Printf("prev header.TotalLen: %v", header.TotalLen)
+  header.TotalLen = buf_len // should already be the same!
   header.Checksum = 0 // checksum is recalculated in the socket write
 
-  payload := buf[header.TotalLen:]
-  headerRaw := buf[:header.TotalLen]
+  log.Printf("final header.TotalLen: %v", header.TotalLen)
+  log.Printf("header.Len: %v", header.Len)
+  headerRaw := buf[:header.Len]
+  payload := buf[header.Len:]
 
   var displayPacket *DisplayPacket = nil
   log.Printf("proto: %v", header.Protocol);
@@ -233,8 +236,8 @@ func ConnectionFromKnownClients(knownClients []config.KnownClient, udpSrcPort, u
     p2 := uint16(knownClient.Port2)
     ports_match := p1 == udpSrcPort && p2 == udpDstPort   
     backward_match := p2 == udpSrcPort && p1 == udpDstPort
-    log.Printf("checking %v:%v", p1, p2);
-    log.Printf("checking %v:%v", p1, p2);
+    log.Printf("checking kc: %v:%v", p1, p2);
+    log.Printf("against actual: %v:%v", udpSrcPort, udpDstPort);
     log.Printf("ports_match: %v", ports_match);
     log.Printf("proto_match: %v", knownClient.Protocol == "UDP");
   
@@ -274,7 +277,9 @@ type Change struct{
 
 // header type is from golang.org/x/net/ipv4 btw
 func handleUdpPacket(ip_Header* ipv4.Header, ipHeaderRaw []byte, udpRaw []byte, displayPacketQ chan InfoUpdate, raw []byte) (*DisplayPacket, error){
+
   udpHeader := udpRaw[0:8] // 8 bytes of UDP header
+  log.Printf("udpHeader: %v", udpHeader)
   udpPayload := udpRaw[8:ip_Header.TotalLen]
   // log.Printf("len from handleUdpPacket: %v", len(udpRaw))
   
