@@ -133,15 +133,18 @@ func HandleIpPacket(buf []byte, buf_len int, tun2EthQ chan Packet, displayPacket
     log.Printf("Error parsing header")
     return false
   }
+
+  // log.Printf("HandleIpPacket: len(buf), buf_len %v, %v", len(buf), buf_len)
+  log.Printf("buf[:buf_len+5]: %v", buf[:buf_len])
   // oldSrc := header.Src
   // oldDst := header.Dst
   // header.Src = config.Config.IFaceAddr
   // header.Src = oldDst
-  header.TotalLen = len(buf)
+  header.TotalLen = buf_len
   header.Checksum = 0 // checksum is recalculated in the socket write
 
-  payload := buf[header.Len:]
-  headerRaw := buf[:header.Len]
+  payload := buf[header.TotalLen:]
+  headerRaw := buf[:header.TotalLen]
 
   var displayPacket *DisplayPacket = nil
   log.Printf("proto: %v", header.Protocol);
@@ -272,7 +275,8 @@ type Change struct{
 // header type is from golang.org/x/net/ipv4 btw
 func handleUdpPacket(ip_Header* ipv4.Header, ipHeaderRaw []byte, udpRaw []byte, displayPacketQ chan InfoUpdate, raw []byte) (*DisplayPacket, error){
   udpHeader := udpRaw[0:8] // 8 bytes of UDP header
-  udpPayload := udpRaw[8:]
+  udpPayload := udpRaw[8:ip_Header.TotalLen]
+  // log.Printf("len from handleUdpPacket: %v", len(udpRaw))
   
   udpSrcPort := binary.BigEndian.Uint16(udpHeader[0:2]) // Source port is the first 2 bytes
   udpDstPort := binary.BigEndian.Uint16(udpHeader[2:4]) // Destination port is the next 2 bytes
