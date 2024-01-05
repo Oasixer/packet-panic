@@ -141,13 +141,13 @@ func HandleIpPacket(buf []byte, buf_len int, tun2EthQ chan Packet, displayPacket
   // header.Src = config.Config.IFaceAddr
   // header.Src = oldDst
   log.Printf("prev header.TotalLen: %v", header.TotalLen)
-  header.TotalLen = buf_len // should already be the same!
+  header.TotalLen = buf_len
   header.Checksum = 0 // checksum is recalculated in the socket write
 
   log.Printf("final header.TotalLen: %v", header.TotalLen)
   log.Printf("header.Len: %v", header.Len)
   headerRaw := buf[:header.Len]
-  payload := buf[header.Len:]
+  payload := buf[header.Len:buf_len]
 
   var displayPacket *DisplayPacket = nil
   log.Printf("proto: %v", header.Protocol);
@@ -279,8 +279,8 @@ type Change struct{
 func handleUdpPacket(ip_Header* ipv4.Header, ipHeaderRaw []byte, udpRaw []byte, displayPacketQ chan InfoUpdate, raw []byte) (*DisplayPacket, error){
 
   udpHeader := udpRaw[0:8] // 8 bytes of UDP header
-  log.Printf("udpHeader: %v", udpHeader)
-  udpPayload := udpRaw[8:ip_Header.TotalLen]
+  log.Printf("udpRaw len: %v", len(udpRaw))
+  udpPayload := udpRaw[8:]
   // log.Printf("len from handleUdpPacket: %v", len(udpRaw))
   
   udpSrcPort := binary.BigEndian.Uint16(udpHeader[0:2]) // Source port is the first 2 bytes
