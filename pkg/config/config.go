@@ -14,14 +14,14 @@ type KnownClient struct {
 	IP2_   net.IP
 	Port1  int     `mapstructure:"port1"`
 	Port2  int     `mapstructure:"port2"`
-	Method string  `mapstructure:"port2"`
+	Protocol string  `mapstructure:"protocol"`
 }
 
 func (c KnownClient) Hash(reverse bool) string {
 	if reverse{
-		return fmt.Sprintf("%s:%d-%d", c.Port2, c.Port1, c.Method)
+		return fmt.Sprintf("%s:%d-%d", c.Port2, c.Port1, c.Protocol)
 	}
-	return fmt.Sprintf("%s:%d-%d", c.Port1, c.Port2, c.Method)
+	return fmt.Sprintf("%s:%d-%d", c.Port1, c.Port2, c.Protocol)
 }
 
 type config struct {

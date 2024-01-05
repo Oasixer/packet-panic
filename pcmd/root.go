@@ -173,7 +173,7 @@ func Root(cmd *cobra.Command, args []string) {
 	eg := new(errgroup.Group)
 
 	tun2EthQ := make(chan ppanic.Packet, 1)
-	displayPacketQ := make(chan ppanic.DisplayPacket, 1)
+	infoUpdateQ := make(chan ppanic.InfoUpdate, 1)
 
 	// same conn used to forward packets btw
 	conn, err := net.ListenPacket("ip4:udp", "0.0.0.0")
@@ -189,14 +189,16 @@ func Root(cmd *cobra.Command, args []string) {
 		return
 	}
 
+	delayerConfig := ppanic.NewDelayerConfig(200*time.Millisecond, 800*time.Millisecond)
+	delayer := ppanic.NewDelayer(delayerConfig)
 	manips := []ppanic.PacketManipulator{
-		// &ppanic.Corruptor{},
 		// ppanic.NewDelayer(1000*time.Millisecond, 7000*time.Millisecond),
-		ppanic.NewDelayer(ppanic.NewDelayerConfig(200*time.Millisecond, 800*time.Millisecond)),
+		// ppanic.NewDelayer(delayerConfig),
+		delayer,
 	}
 
 	eg.Go(func() error {
-		return ppanic.Dispatcher(iface, tun2EthQ, displayPacketQ, manips)
+		return ppanic.Dispatcher(iface, tun2EthQ, infoUpdateQ, manips)
 	})
 
 	eg.Go(func() error {
@@ -204,7 +206,7 @@ func Root(cmd *cobra.Command, args []string) {
 	})
 
 	eg.Go(func() error {
-		return ppanic.DataServer(displayPacketQ)
+		return ppanic.DataServer(infoUpdateQ)
 	})
  
 

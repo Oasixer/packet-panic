@@ -47,13 +47,13 @@ type PacketManipulator interface {
 }
 
 type Delayer struct {
-  cfg DelayerConfig
+  cfg *DelayerConfig
   manip *DelayerManipulation
-  delayMs time.Duration
+  // delay time.Duration
 }
 
 type Corruptor struct{
-  cfg CorruptorConfig
+  cfg *CorruptorConfig
   manip *CorruptorManipulation
 }
 
@@ -89,7 +89,7 @@ type PayloadBitFlip struct{
   NewValue string `json:"newValue"`
 }
 
-func NewCorruptor(corruptorConfig CorruptorConfig) *Corruptor {
+func NewCorruptor(corruptorConfig* CorruptorConfig) *Corruptor {
   return &Corruptor{cfg: corruptorConfig, manip: nil}
 }
 
@@ -100,8 +100,8 @@ func NewCorruptorConfig(numBitsToFlipPayload int, l2HeaderCorruptionProbability,
   }
 }
 
-func NewDelayer(delayerConfig DelayerConfig) *Delayer {
-  return &Delayer{cfg: delayerConfig, manip: nil, delayMs: 0}
+func NewDelayer(delayerConfig* DelayerConfig) *Delayer {
+  return &Delayer{cfg: delayerConfig, manip: nil}
 }
 
 func NewDelayerConfig(minDelay, maxDelay time.Duration) *DelayerConfig {
@@ -111,7 +111,7 @@ func NewDelayerConfig(minDelay, maxDelay time.Duration) *DelayerConfig {
 func (d *Delayer) DecideManipulations(packet *Packet, displayPacket *DisplayPacket) {
 	randomDelay := d.cfg.MinDelay + time.Duration(rand.Int63n(int64(d.cfg.MaxDelay-d.cfg.MinDelay)))
   manip := DelayerManipulation{
-    Cfg: d.cfg,
+    Cfg: *d.cfg,
     DelayMs: int(randomDelay.Milliseconds()),
     delay: randomDelay,
   }
@@ -173,7 +173,7 @@ func (c *Corruptor) DecideManipulations(packet *Packet, displayPacket *DisplayPa
   }
 
   corruptorManipulation := &CorruptorManipulation{
-    Cfg: c.cfg,
+    Cfg: *c.cfg,
     HeaderBitFlips: headerBitFlips,
     PayloadBitFlips: payloadBitFlips,
   }
@@ -229,7 +229,7 @@ func Dispatcher(iface *water.Interface, tun2EthQ chan Packet, displayPacketQ cha
       // startTime := time.Now()
 
       if ok := HandleIpPacket(buf, buf_len, tun2EthQ, displayPacketQ, manipulators); !ok{
-        fmt.Printf("packet failed to parse")
+        fmt.Printf("IP packet failed to parse")
       }
 
     }(buf, n)
@@ -245,14 +245,15 @@ func PacketSender(conn *ipv4.RawConn, tun2EthQ chan Packet) error{
     packet := <-tun2EthQ
     packetSizeBytes := packet.ipHeader.TotalLen
 		lifetimeBytesSent += packetSizeBytes
-    // log.Debug().Msgf("payload_len: %d", len(packet.payload))
+    log.Debug().Msgf("sending. payload_len: %d", len(packet.payload))
     // send packet
     err := conn.WriteTo(packet.ipHeader, packet.payload, nil)
     if err != nil { // if connection is closed, exit nicely
       if errors.Is(err, net.ErrClosed) {
         return nil
       }
-      return fmt.Errorf("Error: %w", err)
+      log.Printf("error_asdf:")
+      return fmt.Errorf("error: %w", err)
     }
     nPackets += 1
 
@@ -262,9 +263,11 @@ func PacketSender(conn *ipv4.RawConn, tun2EthQ chan Packet) error{
       gotFirstPacket = true
     }
     if (nPackets % 10000 == 0) {
-      elapsedTime := time.Now().Sub(startTime)
-      speedGBps := float64(lifetimeBytesSent) / (1024 * 1024 * 1024) / elapsedTime.Seconds()
-      fmt.Printf("Speed: %.2f P/s, %.2f Gb/s %.2f GB/s\n", float64(nPackets) / elapsedTime.Seconds(), speedGBps*8, speedGBps)
+      // elapsedTime := time.Now().Sub(startTime)
+      elapsedTime := time.Since(startTime)
+      // speedGBps := float64(lifetimeBytesSent) / (1024 * 1024 * 1024) / elapsedTime.Seconds()
+      // fmt.Printf("Speed: %.2f P/s, %.2f Gb/s %.2f GB/s\n", float64(nPackets) / elapsedTime.Seconds(), speedGBps*8, speedGBps)
+      fmt.Printf("Time (tmp print just to use elapsedTime)%v\n", elapsedTime.Seconds())
     }
 	}
 }

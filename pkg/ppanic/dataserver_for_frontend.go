@@ -14,10 +14,10 @@ var upgrader = websocket.Upgrader{
   WriteBufferSize: 1024,
 }
 
-func main() {
-}
+// func main() { // TODO: ??? what is this
+// }
 
-func DataServer(displayPacketQ chan InfoUpdate){
+func DataServer(infoUpdateQ chan InfoUpdate) error{
   var handleConnections = func(w http.ResponseWriter, r *http.Request) {
     // Upgrade initial GET request to a websocket
     ws, err := upgrader.Upgrade(w, r, nil)
@@ -27,7 +27,7 @@ func DataServer(displayPacketQ chan InfoUpdate){
     defer ws.Close()
 
     for {
-      infoUpdate := <- displayPacketQ
+      infoUpdate := <- infoUpdateQ
       // Send a JSON object every second
       jsonMessage, err := json.Marshal(infoUpdate)
       if err != nil {
@@ -49,5 +49,6 @@ func DataServer(displayPacketQ chan InfoUpdate){
   //
   // The handler is typically nil, in which case the DefaultServeMux is used.
   http.ListenAndServe(":8080", nil)
+  return nil
 }
 

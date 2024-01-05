@@ -1,12 +1,15 @@
 package ppanic
 
 import (
-	"encoding/base64"
+	// "encoding/base64"
 	"encoding/binary"
+	"encoding/hex"
+
 	// "encoding/json"
 	"errors"
 	"fmt"
 	"net"
+
 	"github.com/rs/zerolog/log"
 
 	"github.com/google/uuid"
@@ -84,12 +87,10 @@ type ConnectionData struct {
   NPackets uint64 `json:"nPackets"`
   SrcIP net.IP `json:"srcIP"`
   DstIP net.IP `json:"dstIP"`
-  srcPort uint16
-  dstPort uint16
-  SrcPort string `json:"srcPort"`
-  DstPort string `json:"dstPort"`
-  Method string `json:"method"`
-  SpeedGBps float32 `json:"speedGBps"`
+  SrcPort uint16 `json:"srcPort"`
+  DstPort uint16 `json:"dstPort"`
+  Protocol string `json:"protocol"`
+  // SpeedGBps float32 `json:"speedGBps"`
   // DisplayPackets []DisplayPacket `json:"displayPackets"`
   LastPacketTs int64 `json:"lastPacketTs"`
 }
@@ -106,15 +107,15 @@ type Manipulation struct {
 }
 
 type DisplayPacket struct {
-  Id string `json:"connectionId"`
+  Id string `json:"id"`
   ConnectionId string `json:"connectionId"`
-  IpHeader IpHeader `json:"ipHeader"`
-  UdpHeader UdpHeader `json:"udpHeader"`
-  B64RawL2Header string  `json:"b64RawL2Header"` // base64 enc
-  B64RawL3Header string  `json:"b64RawL3Header"` // base64 enc
-  B64RawL3Payload string `json:"b64RawL3Payload"` // base64 enc
+  ConnPacketNum int64 `json:"connPacketNum"`
+  IpHeader IpHeader
+  UdpHeader UdpHeader
+  IpHeaderRaw string `json:"ipHeader"`
+  L3HeaderRaw string `json:"l3HeaderRaw"`
   Ts int64 `json:"ts"`
-
+  Len int32 `json:"len"`
   Manips []Manipulation `json:"manips"`
 }
 
@@ -122,13 +123,14 @@ func HandleIpPacket(buf []byte, buf_len int, tun2EthQ chan Packet, displayPacket
   // get the version xxxx0000 is the version in the first byte
   version := buf[0] >> 4
   if int(version) != 4 {
-    return false// exit if not ipv4
+    // log.Printf("ipv6");
+    return true// exit if not ipv4
   }
   // log.Debug().Msgf("buf_len: %d", buf_len)
 
   header, err := ipv4.ParseHeader(buf)
   if err != nil {
-    fmt.Printf("Error parsing header")
+    log.Printf("Error parsing header")
     return false
   }
   // oldSrc := header.Src
@@ -142,9 +144,10 @@ func HandleIpPacket(buf []byte, buf_len int, tun2EthQ chan Packet, displayPacket
   headerRaw := buf[:header.Len]
 
   var displayPacket *DisplayPacket = nil
+  log.Printf("proto: %v", header.Protocol);
   if (header.Protocol == 6) {
     // TODO: handle TCP
-    fmt.Printf("skipping TCP!")
+    log.Printf("skipping TCP!")
     return false
   } else if (header.Protocol == 17) { // UDP
     _displayPacket, err := handleUdpPacket(header, headerRaw, payload, displayPacketQ, buf)
@@ -156,11 +159,12 @@ func HandleIpPacket(buf []byte, buf_len int, tun2EthQ chan Packet, displayPacket
       displayPacket = _displayPacket
     }
   } else {
-    fmt.Printf("Header was not UDP!: %v", header.Protocol)
+    log.Printf("Header was not UDP!: %v", header.Protocol)
     return false
   }
 
   if (displayPacket == nil){
+    fmt.Println("error: nil packet")
     return false // for sanity
   }
   packet := Packet{
@@ -180,9 +184,16 @@ func HandleIpPacket(buf []byte, buf_len int, tun2EthQ chan Packet, displayPacket
     i++
   }
   newPackets := []DisplayPacket{*displayPacket}
-  infoUpdate := InfoUpdate{
-    Connections: connections,
+  connectionUpdate := ConnectionUpdate{
+    ConnectionId: displayPacket.ConnectionId,
     NewPackets: newPackets,
+    SkippedPackets: make([]SkippedPacket, 0),
+  }
+  connectionUpdates := []ConnectionUpdate{connectionUpdate}
+
+  infoUpdate := InfoUpdate{
+    NewConnections: connections,
+    ConnectionUpdates: connectionUpdates,
   }
   // enqueue the info before actually running delays etc.
   displayPacketQ <- infoUpdate
@@ -212,15 +223,20 @@ func HandleIpPacket(buf []byte, buf_len int, tun2EthQ chan Packet, displayPacket
 
 
 func ConnectionFromKnownClients(knownClients []config.KnownClient, udpSrcPort, udpDstPort uint16) (*ConnectionData, bool){
+  log.Printf("knownClients len: %v", len(knownClients));
   for i := 0; i < len(knownClients); i++ {
     knownClient := knownClients[i]
     p1 := uint16(knownClient.Port1)
     p2 := uint16(knownClient.Port2)
     ports_match := p1 == udpSrcPort && p2 == udpDstPort   
     backward_match := p2 == udpSrcPort && p1 == udpDstPort
+    log.Printf("checking %v:%v", p1, p2);
+    log.Printf("checking %v:%v", p1, p2);
+    log.Printf("ports_match: %v", ports_match);
+    log.Printf("proto_match: %v", knownClient.Protocol == "UDP");
   
     // todo mild refactor
-    if (ports_match || backward_match) && knownClient.Method == "UDP" {
+    if (ports_match || backward_match) && knownClient.Protocol == "UDP" {
       srcIP := net.ParseIP(knownClient.IP1)
       dstIP := net.ParseIP(knownClient.IP2)
       if backward_match{ // if 2->1 rather than 1->2 which is assumed
@@ -232,12 +248,9 @@ func ConnectionFromKnownClients(knownClients []config.KnownClient, udpSrcPort, u
         NPackets: 1,
         SrcIP: srcIP,
         DstIP: dstIP,
-        SrcPort: string(udpSrcPort),
-        srcPort: udpSrcPort,
-        DstPort: string(udpDstPort),
-        dstPort: udpDstPort,
-        Method: knownClient.Method,
-        SpeedGBps: 0,
+        SrcPort: udpSrcPort,
+        DstPort: udpDstPort,
+        Protocol: knownClient.Protocol,
         // DisplayPackets: make([]DisplayPacket, 0),
         LastPacketTs: 0, // because we haven't assigned the packet yet...
       }, true
@@ -259,15 +272,15 @@ type Change struct{
 // header type is from golang.org/x/net/ipv4 btw
 func handleUdpPacket(ip_Header* ipv4.Header, ipHeaderRaw []byte, udpRaw []byte, displayPacketQ chan InfoUpdate, raw []byte) (*DisplayPacket, error){
   udpHeader := udpRaw[0:8] // 8 bytes of UDP header
-  udpPayload := udpRaw[8:len(udpRaw)]
+  udpPayload := udpRaw[8:]
   
   udpSrcPort := binary.BigEndian.Uint16(udpHeader[0:2]) // Source port is the first 2 bytes
   udpDstPort := binary.BigEndian.Uint16(udpHeader[2:4]) // Destination port is the next 2 bytes
-  // fmt.Printf("found connection: %d -> %d", udpSrcPort, udpDstPort)
-  // fmt.Printf("UDP Source Port: %d, Destination Port: %d\n", udpSrcPort, udpDstPort)
-  // fmt.Printf("oldSrc %s, oldDst: %s\n", oldSrc, oldDst)
+  // log.Printf("found connection: %d -> %d", udpSrcPort, udpDstPort)
+  // log.Printf("UDP Source Port: %d, Destination Port: %d\n", udpSrcPort, udpDstPort)
+  // log.Printf("oldSrc %s, oldDst: %s\n", oldSrc, oldDst)
 
-  hash := fmt.Sprintf("%s:%d-%d", udpSrcPort, udpDstPort, "UDP")
+  hash := fmt.Sprintf("%s:%d-%d", "UDP", udpSrcPort, udpDstPort)
   
   var curConnection *ConnectionData = nil
 
@@ -312,9 +325,11 @@ func handleUdpPacket(ip_Header* ipv4.Header, ipHeaderRaw []byte, udpRaw []byte, 
     ConnectionId: curConnection.Id,
     IpHeader: displayIpHeader,
     UdpHeader: displayUdpHeader,
-    B64RawL2Header: base64.StdEncoding.EncodeToString(ipHeaderRaw),
-    B64RawL3Header: base64.StdEncoding.EncodeToString(udpHeader),
-    B64RawL3Payload: base64.StdEncoding.EncodeToString(udpPayload),
+    IpHeaderRaw: hex.EncodeToString(ipHeaderRaw),
+    L3HeaderRaw: hex.EncodeToString(udpHeader),
+    // todo: potentially use b64 for performance? but ummmmm at that point maybe this isnt the way...
+    // B64RawL3Header: base64.StdEncoding.EncodeToString(udpHeader),
+    // B64RawL3Payload: base64.StdEncoding.EncodeToString(udpPayload),
     Ts: nowMillis,
     Manips: make([]Manipulation, 0),
   }

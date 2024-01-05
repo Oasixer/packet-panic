@@ -50,6 +50,17 @@ export const dummyPacket: DisplayPacket = {
   saved: true,
 };
 
+export interface JsonPacket {
+  id: number; // eg. global autoincrementing packet num
+  connectionId: number;
+  connPacketNum: number; // eg. autoincrementing packet num within this connection
+  ipHeaderRaw: string;
+  l3HeaderRaw: string;
+  ts: number;
+  len: number;
+  manips: Manipulation[];
+}
+
 export interface DisplayPacket {
   id: number; // eg. global autoincrementing packet num
   // packetNumLocal: number; // eg. autoincrementing packet num within this connection
@@ -62,15 +73,8 @@ export interface DisplayPacket {
   dstPort: string;
   proto: ProtoL3;
   len: number;
-  // udpHeader: UdpHeader;
-  // lengthBytes: number; // redundant with totalLen
-
-  // b64RawL2Header: string; // base64 encoded string
-  // b64RawL3Header: string; // base64 encoded string
-  // b64RawL3Payload: string; // base64 encoded string
   ts: number;
   tsFmt: string;
-  // tsHHMMSSmmm?: string;
   manips: Manipulation[];
   saved: boolean;
 }
@@ -81,12 +85,12 @@ export interface ConnectionData {
   dstIP: string; // Assuming net.IP can be represented as a string
   srcPort: string; // uint16 in Go translates to number in TypeScript
   dstPort: string; // uint16 in Go translates to number in TypeScript
-  proto: ProtoL3;
-  speedGBps: number; // float32 in Go translates to number in TypeScript
+  protocol: ProtoL3;
+  // speedGBps: number; // float32 in Go translates to number in TypeScript
   // displayPackets: DisplayPacket[];
   lastPacketTs: number; // int64 in Go translates to number in TypeScript
   // _lastPacketTs: Date; // int64 in Go translates to number in TypeScript
-  packets: DisplayPacket[];
+  // packets: DisplayPacket[];
 }
 
 // TODO: weird solution that i don't really like
@@ -110,7 +114,7 @@ export let sampleConnections: ConnectionData[] = [
     dstIP: "192.168.0.1",
     srcPort: "12345",
     dstPort: "8001",
-    proto: ProtoL3.TCP,
+    protocol: ProtoL3.TCP,
     speedGBps: 69,
     // displayPackets: [],
     lastPacketTs: 0,
@@ -160,7 +164,7 @@ export let sampleConnections: ConnectionData[] = [
     dstIP: "192.168.0.2",
     srcPort: "12345",
     dstPort: "6969",
-    proto: ProtoL3.UDP,
+    protocol: ProtoL3.UDP,
     speedGBps: 0.42,
     // displayPackets: [],
     lastPacketTs: 0,

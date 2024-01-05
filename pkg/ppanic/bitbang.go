@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net"
 
+	"github.com/rs/zerolog/log"
 	"golang.org/x/net/ipv4"
 )
 
@@ -60,7 +61,7 @@ func (h *IpHeader) CopyFromIPv4Header(ipv4Header *ipv4.Header) {
 	h.Checksum = ipv4Header.Checksum
 	h.Src = string(ipv4Header.Src)
 	h.Dst = string(ipv4Header.Dst)
-	h.Options = ipv4Header.Options
+	// h.Options = ipv4Header.Options
 }
 
 func onesComplementAdd(a, b uint32) uint32 {
@@ -72,7 +73,7 @@ func UpdateUdpChecksum(header *ipv4.Header, udpHeader, udpPayload []byte) {
   udpHeader[6] = 0
   udpHeader[7] = 0
   checksum := ComputeUDPChecksum(header.Src, header.Dst, udpHeader, udpPayload)
-  // fmt.Printf("checksum: 0x%x%x", byte(checksum >> 8), byte(checksum & 0xFF))
+  log.Printf("checksum: 0x%x%x", byte(checksum >> 8), byte(checksum & 0xFF))
   // checksum2 := UpdateChecksumForNewIPs(udpHeader[6:8], oldSrc, oldDst, header.Src, header.Dst)
 
   udpHeader[6] = byte(checksum >> 8) // update header w/ new checksum
