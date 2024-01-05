@@ -28,6 +28,8 @@ func computeUDPChecksum(src, dst net.IP, udpHeader, udpPayload []byte) uint16 {
 
     var sum uint32
 
+    log.Printf("CHECKSUM. udpLength: %v", udpLength);
+    log.Printf("CHECKSUM. src, dst: %v, %v", src, dst);
     // Sum pseudo-header
     pseudoHeader := []byte{
         src.To4()[0], src.To4()[1], src.To4()[2], src.To4()[3],
@@ -39,10 +41,14 @@ func computeUDPChecksum(src, dst net.IP, udpHeader, udpPayload []byte) uint16 {
         sum += uint32(pseudoHeader[i])<<8 | uint32(pseudoHeader[i+1])
     }
 
+    log.Printf("Sum after pseudoHeader: %v", sum);
+
     // Sum UDP header
     for i := 0; i < len(udpHeader); i += 2 {
         sum += uint32(udpHeader[i])<<8 | uint32(udpHeader[i+1])
     }
+
+    log.Printf("Sum after udpHeader: %v", sum);
 
     // Sum UDP payload
     for i := 0; i < len(udpPayload); i += 2 {
@@ -52,6 +58,7 @@ func computeUDPChecksum(src, dst net.IP, udpHeader, udpPayload []byte) uint16 {
             sum += uint32(udpPayload[i])<<8 | uint32(udpPayload[i+1])
         }
     }
+    log.Printf("Sum after udpPayload: %v", sum);
 
     // Finalize checksum calculation
     for sum>>16 != 0 {
@@ -153,7 +160,7 @@ func Dispatcher(iface *water.Interface, tun2EthQ chan Packet, manipulators []Pac
       // oldSrc := header.Src
       // oldDst := header.Dst
       header.Dst = config.Config.OFaceAddr // TODO: return addr table
-      header.Src = config.Config.OFaceAddr
+      header.Src = config.Config.NetReturnAddr
       header.TotalLen = len(buf)
       header.Checksum = 0 // checksum is recalculated in the socket write
 
@@ -169,7 +176,7 @@ func Dispatcher(iface *water.Interface, tun2EthQ chan Packet, manipulators []Pac
         udpHeader[6] = 0
         udpHeader[7] = 0
         checksum := computeUDPChecksum(header.Src, header.Dst, udpHeader, udpPayload)
-        // fmt.Printf("checksum: 0x%x%x", byte(checksum >> 8), byte(checksum & 0xFF))
+        fmt.Printf("checksum: 0x%x%x", byte(checksum >> 8), byte(checksum & 0xFF))
         // checksum2 := updateChecksumForNewIPs(udpHeader[6:8], oldSrc, oldDst, header.Src, header.Dst)
 
 
