@@ -28,7 +28,8 @@ export function splitBytes(
     return [hexString];
   }
   if (!hexString || hexString.length % 2 !== 0) {
-    throw new Error("Invalid hex string");
+    // throw new Error("Invalid hex string");
+    console.log("Invalid hex string: ", hexString);
   }
 
   // Split the hex string into chunks of two characters each
@@ -100,6 +101,13 @@ function ipLabelSubs(id: IpHeaderField): string {
 }
 
 function udpLabelSubs(id: UdpHeaderField): string {
+  switch (id) {
+    default:
+      return id as unknown as string;
+  }
+}
+
+function tcpLabelSubs(id: TcpHeaderField): string {
   switch (id) {
     default:
       return id as unknown as string;
@@ -308,10 +316,10 @@ export const ipHeaderFields: Field[][] = [
 // ];
 
 export enum UdpHeaderField {
-  srcPort = <any>"srcPort",
-  dstPort = <any>"dstPort",
-  length = <any>"length",
-  checksum = <any>"checksum",
+  srcPort = "srcPort",
+  dstPort = "dstPort",
+  length = "length",
+  checksum = "checksum",
 }
 
 export const udpHeaderFields: Field[][] = [
@@ -395,81 +403,86 @@ export const tcpHeaderFields: Field[][] = [
   [
     {
       id: TcpHeaderField.srcPort,
-      startByte: 0,
-      lenBytes: 2,
-      color: "#FF7878", // color1
+      startBit: 0,
+      lenBits: 16,
+      color: "#BFE9FB",
     },
     {
       id: TcpHeaderField.dstPort,
-      startByte: 2,
-      lenBytes: 2,
-      color: "#E5816F", // color2
+      startBit: 16,
+      lenBits: 16,
+      color: "#3DA58A", // greenaccent
     },
   ],
   [
     {
       id: TcpHeaderField.sequenceNumber,
-      startByte: 4,
-      lenBytes: 4,
+      startBit: 32,
+      lenBits: 32,
       color: "#BCC565", // color3
     },
   ],
   [
     {
       id: TcpHeaderField.ackNumber,
-      startByte: 8,
-      lenBytes: 4,
+      startBit: 64,
+      lenBits: 32,
       color: "#82D35D", // color4
     },
   ],
   [
     {
       id: TcpHeaderField.headerLen,
-      startByte: 12,
-      lenBytes: 1 / 2,
+      startBit: 96,
+      lenBits: 4,
       color: "#557755", // color5
     },
     {
       id: TcpHeaderField.reserved,
-      startByte: 13,
-      lenBytes: 3, // Note: This combines reserved (3 bits), flags (9 bits), and the first bit of window
+      startBit: 100,
+      lenBits: 4,
       color: "#6BC1D7", // color6
+    },
+    {
+      id: TcpHeaderField.flags,
+      startBit: 104,
+      lenBits: 8,
+      color: "#6165D7", // color7
     },
   ],
   [
     {
       id: TcpHeaderField.window,
-      startByte: 14,
-      lenBytes: 2, // Note: This starts from the second byte of the previous field
-      color: "#6165D7", // color7
+      startBit: 112,
+      lenBits: 16,
+      color: "#A191FC", // color8
     },
     {
       id: TcpHeaderField.checksum,
-      startByte: 16,
-      lenBytes: 2,
-      color: "#A191FC", // color8
+      startBit: 128,
+      lenBits: 16,
+      color: "#9A7AC1", // color9
     },
   ],
   [
     {
       id: TcpHeaderField.urgentPointer,
-      startByte: 18,
-      lenBytes: 2,
-      color: "#9A7AC1", // color9
-    },
-    {
-      id: TcpHeaderField.options,
-      startByte: 20,
-      lenBytes: 0, // Variable length, starts at 20, length determined dynamically
+      startBit: 144,
+      lenBits: 16,
       color: "#D392CD", // color10
     },
-  ],
-  [
+    // Padding and options are variable in size. Adjust their startBit and lenBits accordingly.
+    {
+      id: TcpHeaderField.options,
+      startBit: 160, // Variable
+      lenBits: 0, // Variable
+      color: "#893F5E", // color11
+    },
     {
       id: TcpHeaderField.padding,
-      startByte: 20, // Variable start, follows options
-      lenBytes: 0, // Variable length, determined dynamically
-      color: "#893F5E", // color11
+      startBit: 160, // Variable
+      lenBits: 0, // Variable
+      color: "#557755", // Repeat color for padding
     },
   ],
 ];
@@ -478,6 +491,7 @@ export interface PacketTypeMeta {
   fields: Field[][];
   labelSubs: (input: string) => string;
   headerProp: string;
+  rawHeaderLabel: string;
   // styling: Styling;
   // borderColor: string;
 }
@@ -486,10 +500,19 @@ export const ipPacketMeta: PacketTypeMeta = {
   fields: ipHeaderFields,
   labelSubs: ipLabelSubs,
   headerProp: IP_HEADER_PROP,
+  rawHeaderLabel: "IP Header",
 };
 
 export const udpPacketMeta: PacketTypeMeta = {
   fields: udpHeaderFields,
   labelSubs: udpLabelSubs,
   headerProp: UDP_HEADER_PROP,
+  rawHeaderLabel: "UDP Header",
+};
+
+export const tcpPacketMeta: PacketTypeMeta = {
+  fields: tcpHeaderFields,
+  labelSubs: tcpLabelSubs,
+  headerProp: UDP_HEADER_PROP, // same as udp
+  rawHeaderLabel: "TCP Header",
 };

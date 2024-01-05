@@ -3,12 +3,13 @@ import { Component } from "preact";
 import RawIcon from "@/Dashboard/Icons/RawIcon";
 import { dashboardComponentSignals } from "@/Dashboard/Dashboard";
 import { Signal, effect, signal } from "@preact/signals";
-import { DisplayPacket } from "@/Dashboard/connectionData";
+import { DisplayPacket, ProtoL3 } from "@/Dashboard/connectionData";
 import RawPacketRow from "./RawPacketRow";
 import ToggleHex from "./ToggleHex";
 import {
   IpHeaderField,
   ipPacketMeta,
+  tcpPacketMeta,
   udpPacketMeta,
 } from "@/Dashboard/packetTypes";
 import { FmtTypePropName, fmtOrDefault } from "@/Dashboard/formatters";
@@ -27,8 +28,10 @@ export type RawPacketSectionProps = {
 
 export default class RawPacketSection extends Component<RawPacketSectionProps> {
   render() {
-    const { displayPacket, fmtProp, swappable, byteLabels, title, growRight } =
-      this.props;
+    const { displayPacket, fmtProp, swappable, byteLabels, title } = this.props;
+    const l2PacketTypeMeta =
+      displayPacket.value.proto === ProtoL3.UDP ? udpPacketMeta : tcpPacketMeta;
+    console.log("displayPacket.value.proto:", displayPacket.value.proto);
     return (
       <div
         className={`flex flex-col gap-1 ${
@@ -58,22 +61,26 @@ export default class RawPacketSection extends Component<RawPacketSectionProps> {
               ))}
             </div>
             {fmtProp.value === FmtTypePropName.labelFmt && (
-              <p className="font-monoCP text-sz4">IP Header</p>
+              <p className="font-monoCP text-sz4">
+                {ipPacketMeta.rawHeaderLabel}
+              </p>
             )}
           </div>
           <div className="flex flex-row gap-2 flex-nowrap items-center">
             <div className="flex flex-col gap-1">
-              {udpPacketMeta.fields.map((row) => (
+              {l2PacketTypeMeta.fields.map((row) => (
                 <RawPacketRow
                   displayPacket={displayPacket}
                   rowFields={row}
-                  packetTypeMeta={udpPacketMeta}
+                  packetTypeMeta={l2PacketTypeMeta}
                   fmtProp={fmtProp}
                 />
               ))}
             </div>
             {fmtProp.value === FmtTypePropName.labelFmt && (
-              <p className="font-monoCP text-sz4 mt-3.5">UDP Header</p>
+              <p className="font-monoCP text-sz4 mt-3.5">
+                {l2PacketTypeMeta.rawHeaderLabel}
+              </p>
             )}
           </div>
         </div>

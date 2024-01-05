@@ -42,11 +42,16 @@ export default class PacketDetailsReadouts extends Component<PacketDetailsReadou
           fmt={fmtTs}
         />
         <TextReadout label="no" propName="id" dataSignal={displayPacket} />
+        <TextReadout
+          propName="proto"
+          dataSignal={displayPacket}
+          // fmt={protoHexToStr}
+        />
         <HeaderTextReadout
           dataSignal={displayPacket}
           propId={IpHeaderField.protocol}
           packetTypeMeta={ipPacketMeta}
-          fmt={protoHexToStr}
+          // fmt={protoHexToStr}
         />
 
         <HeaderTextReadout
