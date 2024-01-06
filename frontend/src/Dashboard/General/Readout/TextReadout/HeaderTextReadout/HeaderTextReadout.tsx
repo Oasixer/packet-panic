@@ -27,6 +27,9 @@ export default class HeaderTextReadout extends Component<HeaderTextReadoutProps>
       };
     }
 
+    console.log("value: ", dataSignal.value[packetTypeMeta.headerProp]);
+    console.log("(for)", packetTypeMeta.headerProp);
+
     return (
       <Readout
         label={packetTypeMeta.labelSubs(propId)}

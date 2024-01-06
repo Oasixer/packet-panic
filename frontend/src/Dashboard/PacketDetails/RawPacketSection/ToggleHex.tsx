@@ -27,7 +27,7 @@ export default class ToggleHex extends Component<ToggleHexProps> {
     };
     return (
       <div
-        className="flex flex-row h-full items-center gap-3 bg-blue-bgInner px-3"
+        className="flex flex-row h-full items-center gap-3 bg-blue-bgInner px-3 cursor-pointer"
         onClick={swapFmt}
       >
         {/* <label className="h-fit">hex</label> */}

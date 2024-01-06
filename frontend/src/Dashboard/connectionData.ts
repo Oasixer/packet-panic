@@ -40,8 +40,8 @@ export interface JsonPacket {
   connectionId: number;
   connPacketNum: number; // eg. autoincrementing packet num within this connection
   ipHeaderRaw: string;
-  l3HeaderRaw: string;
-  l3PayloadRaw: string;
+  l4HeaderRaw: string;
+  l4PayloadRaw: string;
   ts: number;
   // len: number;
   manips: Manipulation[];
@@ -52,8 +52,8 @@ export interface DisplayPacket {
   packetNumLocal: number; // eg. autoincrementing packet num within this connection
   connectionId: number;
   ipHeaderRaw: string;
-  l3HeaderRaw: string;
-  l3PayloadRaw: string;
+  l4HeaderRaw: string;
+  l4PayloadRaw: string;
   srcIP: string;
   dstIP: string;
   srcPort: string;
@@ -246,16 +246,16 @@ export function updateConnectionsFromInfoUpdate(
       console.log("jsonPacket: ", jsonPacket);
       let len =
         (jsonPacket.ipHeaderRaw.length +
-          jsonPacket.l3HeaderRaw.length +
-          jsonPacket.l3PayloadRaw.length) /
+          jsonPacket.l4HeaderRaw.length +
+          jsonPacket.l4PayloadRaw.length) /
         2;
       const newPacket: DisplayPacket = {
         id: totalNPackets,
         packetNumLocal: relevantConnection.nPackets,
         connectionId: relevantConnection.id,
         ipHeaderRaw: jsonPacket.ipHeaderRaw,
-        l3HeaderRaw: jsonPacket.l3HeaderRaw,
-        l3PayloadRaw: jsonPacket.l3PayloadRaw,
+        l4HeaderRaw: jsonPacket.l4HeaderRaw,
+        l4PayloadRaw: jsonPacket.l4PayloadRaw,
         srcIP: relevantConnection.srcIP,
         dstIP: relevantConnection.dstIP,
         srcPort: relevantConnection.srcPort,

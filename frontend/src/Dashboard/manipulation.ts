@@ -5,8 +5,8 @@ interface DelayerConfig {
 
 interface CorruptorConfig {
   numBitsToFlipPayload: number;
-  l2HeaderCorruptionProbability: number; // float32 in Go translates to number in TypeScript
   l3HeaderCorruptionProbability: number; // float32 in Go translates to number in TypeScript
+  l4HeaderCorruptionProbability: number; // float32 in Go translates to number in TypeScript
 }
 
 interface CorruptorManipulation {

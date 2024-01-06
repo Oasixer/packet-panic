@@ -21,7 +21,7 @@ const dummyPacket: DisplayPacket = {
   packetNumLocal: 0,
   connectionId: -1,
   ipHeaderRaw: "",
-  l3HeaderRaw: "",
+  l4HeaderRaw: "",
   srcIP: "",
   dstIP: "",
   srcPort: "",

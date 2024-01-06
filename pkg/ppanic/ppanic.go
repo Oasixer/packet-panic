@@ -36,8 +36,8 @@ type DelayerConfig struct{
 
 type CorruptorConfig struct{
   NumBitsToFlipPayload int `json:"numBitsToFlipPayload"`
-  L2HeaderCorruptionProbability float32 `json:"l2HeaderCorruptionProbability"`
   L3HeaderCorruptionProbability float32 `json:"l3HeaderCorruptionProbability"`
+  L4HeaderCorruptionProbability float32 `json:"l4HeaderCorruptionProbability"`
 }
 
 
@@ -93,10 +93,10 @@ func NewCorruptor(corruptorConfig* CorruptorConfig) *Corruptor {
   return &Corruptor{cfg: corruptorConfig, manip: nil}
 }
 
-func NewCorruptorConfig(numBitsToFlipPayload int, l2HeaderCorruptionProbability, l3HeaderCorruptionProbability float32 ) *CorruptorConfig {
+func NewCorruptorConfig(numBitsToFlipPayload int, l3HeaderCorruptionProbability, l4HeaderCorruptionProbability float32 ) *CorruptorConfig {
   return &CorruptorConfig{NumBitsToFlipPayload: numBitsToFlipPayload,
-    L2HeaderCorruptionProbability: l2HeaderCorruptionProbability,
     L3HeaderCorruptionProbability: l3HeaderCorruptionProbability,
+    L4HeaderCorruptionProbability: l4HeaderCorruptionProbability,
   }
 }
 
@@ -139,12 +139,12 @@ func (c *Corruptor) DecideManipulations(packet *Packet, displayPacket *DisplayPa
   // decide how to corrupt headers  
   var headerBitFlips []HeaderBitFlip
   // TODO: append to this by implementing the following TODOS...
-  if c.cfg.L2HeaderCorruptionProbability > 0 {
+  if c.cfg.L3HeaderCorruptionProbability > 0 {
     // TODO: implement corruption on ip header
     // TODO: implement tracking of modifications to ipHeader via
     // some sort of string encoding based on the IpHeader struct fields
   }
-  if c.cfg.L3HeaderCorruptionProbability > 0 {
+  if c.cfg.L4HeaderCorruptionProbability > 0 {
     // TODO: implement corruption on udp header
     // TODO: implement tracking of modifications to udpHeader via
     // some sort of string encoding based on the UdpHeader struct fields

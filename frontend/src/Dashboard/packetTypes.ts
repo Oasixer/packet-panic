@@ -87,8 +87,8 @@ export enum IpHeaderField {
 }
 
 const IP_HEADER_PROP = "ipHeaderRaw";
-const L3_HEADER_PROP = "l3HeaderRaw";
-const L3_PAYLOAD_PROP = "l3PayloadRaw";
+const L4_HEADER_PROP = "l4HeaderRaw";
+const L4_PAYLOAD_PROP = "l4PayloadRaw";
 
 function ipLabelSubs(id: IpHeaderField): string {
   switch (id) {
@@ -488,7 +488,7 @@ export const tcpHeaderFields: Field[][] = [
   ],
 ];
 
-const l3PayloadFields: Field[][] = [
+const l4PayloadFields: Field[][] = [
   [
     {
       id: "payload",
@@ -519,25 +519,25 @@ export const ipPacketMeta: PacketTypeMeta = {
   rawHeaderLabel: "IP Header",
 };
 
-export const l3PayloadMeta: PacketTypeMeta = {
-  fields: l3PayloadFields,
+export const l4PayloadMeta: PacketTypeMeta = {
+  fields: l4PayloadFields,
   labelSubs: (input: string) => {
     return input;
   },
-  headerProp: L3_PAYLOAD_PROP,
+  headerProp: L4_PAYLOAD_PROP,
   rawHeaderLabel: "Payload",
 };
 
 export const udpPacketMeta: PacketTypeMeta = {
   fields: udpHeaderFields,
   labelSubs: udpLabelSubs,
-  headerProp: L3_HEADER_PROP,
+  headerProp: L4_HEADER_PROP,
   rawHeaderLabel: "UDP Header",
 };
 
 export const tcpPacketMeta: PacketTypeMeta = {
   fields: tcpHeaderFields,
   labelSubs: tcpLabelSubs,
-  headerProp: L3_HEADER_PROP, // same as udp
+  headerProp: L4_HEADER_PROP, // same as udp
   rawHeaderLabel: "TCP Header",
 };

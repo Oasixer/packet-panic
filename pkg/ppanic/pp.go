@@ -113,8 +113,8 @@ type DisplayPacket struct {
   // IpHeader IpHeader
   // UdpHeader UdpHeader
   IpHeaderRaw string `json:"ipHeaderRaw"`
-  L3HeaderRaw string `json:"l3HeaderRaw"`
-  L3PayloadRaw string `json:"l3PayloadRaw"`
+  L4HeaderRaw string `json:"l4HeaderRaw"`
+  L4PayloadRaw string `json:"l4PayloadRaw"`
   Ts int64 `json:"ts"`
   // Len int `json:"len"`
   Manips []Manipulation `json:"manips"`
@@ -287,10 +287,6 @@ func handleUdpPacket(ipHeader* ipv4.Header, ipHeaderRaw []byte, udpRaw []byte, d
   
   udpSrcPort := binary.BigEndian.Uint16(udpHeader[0:2]) // Source port is the first 2 bytes
   udpDstPort := binary.BigEndian.Uint16(udpHeader[2:4]) // Destination port is the next 2 bytes
-  // log.Printf("found connection: %d -> %d", udpSrcPort, udpDstPort)
-  // log.Printf("UDP Source Port: %d, Destination Port: %d\n", udpSrcPort, udpDstPort)
-  // log.Printf("oldSrc %s, oldDst: %s\n", oldSrc, oldDst)
-
   hash := fmt.Sprintf("%s:%d-%d", "UDP", udpSrcPort, udpDstPort)
   
   var curConnection *ConnectionData = nil
@@ -336,14 +332,10 @@ func handleUdpPacket(ipHeader* ipv4.Header, ipHeaderRaw []byte, udpRaw []byte, d
   displayPacket := DisplayPacket{
     Id: uuid.New().String(),
     ConnectionId: curConnection.Id,
-    // IpHeader: displayIpHeader,
-    // UdpHeader: displayUdpHeader,
     IpHeaderRaw: hex.EncodeToString(ipHeaderRaw),
-    L3HeaderRaw: hex.EncodeToString(udpHeader),
-    L3PayloadRaw: hex.EncodeToString(udpPayload),
+    L4HeaderRaw: hex.EncodeToString(udpHeader),
+    L4PayloadRaw: hex.EncodeToString(udpPayload),
     // todo: potentially use b64 for performance? but ummmmm at that point maybe this isnt the way...
-    // B64RawL3Header: base64.StdEncoding.EncodeToString(udpHeader),
-    // B64RawL3Payload: base64.StdEncoding.EncodeToString(udpPayload),
     Ts: nowMillis,
     // Len: displayIpHeader.TotalLen,
     Manips: make([]Manipulation, 0),

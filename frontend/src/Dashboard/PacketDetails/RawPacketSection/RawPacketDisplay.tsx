@@ -11,7 +11,7 @@ import {
   ipPacketMeta,
   udpPacketMeta,
   tcpPacketMeta,
-  l3PayloadMeta,
+  l4PayloadMeta,
 } from "@/Dashboard/packetTypes";
 import { FmtTypePropName, fmtOrDefault } from "@/Dashboard/formatters";
 import { ByteLabelFormat } from "./ByteLabels";
@@ -88,8 +88,8 @@ export default class RawPacketSection extends Component<RawPacketSectionProps> {
             <div className="flex flex-row gap-1">
               <RawPacketRow
                 displayPacket={displayPacket}
-                rowFields={l3PayloadMeta.fields[0]}
-                packetTypeMeta={l3PayloadMeta}
+                rowFields={l4PayloadMeta.fields[0]}
+                packetTypeMeta={l4PayloadMeta}
                 fmtProp={fmtProp}
               />
             </div>
@@ -102,7 +102,7 @@ export default class RawPacketSection extends Component<RawPacketSectionProps> {
             )}
             {fmtProp.value === FmtTypePropName.labelFmt && (
               <p className="font-monoCP text-sz4">
-                {l3PayloadMeta.rawHeaderLabel}
+                {l4PayloadMeta.rawHeaderLabel}
               </p>
             )}
           </div>
