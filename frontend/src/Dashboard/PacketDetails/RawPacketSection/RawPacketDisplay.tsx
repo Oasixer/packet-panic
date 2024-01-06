@@ -9,8 +9,9 @@ import ToggleHex from "./ToggleHex";
 import {
   IpHeaderField,
   ipPacketMeta,
-  tcpPacketMeta,
   udpPacketMeta,
+  tcpPacketMeta,
+  l3PayloadMeta,
 } from "@/Dashboard/packetTypes";
 import { FmtTypePropName, fmtOrDefault } from "@/Dashboard/formatters";
 import { ByteLabelFormat } from "./ByteLabels";
@@ -29,7 +30,7 @@ export type RawPacketSectionProps = {
 export default class RawPacketSection extends Component<RawPacketSectionProps> {
   render() {
     const { displayPacket, fmtProp, swappable, byteLabels, title } = this.props;
-    const l2PacketTypeMeta =
+    const l3PacketTypeMeta =
       displayPacket.value.proto === ProtoL3.UDP ? udpPacketMeta : tcpPacketMeta;
     console.log("displayPacket.value.proto:", displayPacket.value.proto);
     return (
@@ -68,18 +69,40 @@ export default class RawPacketSection extends Component<RawPacketSectionProps> {
           </div>
           <div className="flex flex-row gap-2 flex-nowrap items-center">
             <div className="flex flex-col gap-1">
-              {l2PacketTypeMeta.fields.map((row) => (
+              {l3PacketTypeMeta.fields.map((row) => (
                 <RawPacketRow
                   displayPacket={displayPacket}
                   rowFields={row}
-                  packetTypeMeta={l2PacketTypeMeta}
+                  packetTypeMeta={l3PacketTypeMeta}
                   fmtProp={fmtProp}
                 />
               ))}
             </div>
             {fmtProp.value === FmtTypePropName.labelFmt && (
               <p className="font-monoCP text-sz4 mt-3.5">
-                {l2PacketTypeMeta.rawHeaderLabel}
+                {l3PacketTypeMeta.rawHeaderLabel}
+              </p>
+            )}
+          </div>
+          <div className="flex flex-row gap-2 flex-nowrap items-center">
+            <div className="flex flex-row gap-1">
+              <RawPacketRow
+                displayPacket={displayPacket}
+                rowFields={l3PayloadMeta.fields[0]}
+                packetTypeMeta={l3PayloadMeta}
+                fmtProp={fmtProp}
+              />
+            </div>
+            {fmtProp.value !== FmtTypePropName.labelFmt && (
+              <div className="w-[42px] h-full flex flex-row justify-center items-center">
+                <p className="font-monoCP text-white tracking-tighter w-fit h-[20px]">
+                  ...
+                </p>
+              </div>
+            )}
+            {fmtProp.value === FmtTypePropName.labelFmt && (
+              <p className="font-monoCP text-sz4">
+                {l3PayloadMeta.rawHeaderLabel}
               </p>
             )}
           </div>

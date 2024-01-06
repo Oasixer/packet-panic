@@ -178,9 +178,10 @@ export default class Dashboard extends Component {
 
     return (
       <div
-        className="bg-blue-bgOuter p-4 flex flex-row justify-center"
+        className="bg-blue-bgOuter w-fit h-fit p-4 flex flex-row justify-center"
         style={{
-          width: "100%",
+          minWidth: "100%",
+          minHeight: "100vw",
           // maxWidth: "100vw",
           // overflow: "clip",
           // height: "100vh",
