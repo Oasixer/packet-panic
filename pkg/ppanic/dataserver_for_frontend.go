@@ -1,7 +1,7 @@
 package ppanic
 
 import (
-	"encoding/json"
+	// "encoding/json"
 	"log"
 	"net/http"
 	"time"
@@ -10,8 +10,11 @@ import (
 )
 
 var upgrader = websocket.Upgrader{
-  ReadBufferSize:  1024,
-  WriteBufferSize: 1024,
+    ReadBufferSize:  1024,
+    WriteBufferSize: 1024,
+    CheckOrigin: func(r *http.Request) bool {
+      return true // Allow connections from any origin
+    },
 }
 
 // func main() { // TODO: ??? what is this
@@ -29,12 +32,12 @@ func DataServer(infoUpdateQ chan InfoUpdate) error{
     for {
       infoUpdate := <- infoUpdateQ
       // Send a JSON object every second
-      jsonMessage, err := json.Marshal(infoUpdate)
+      // jsonMessage, err := json.Marshal(infoUpdate)
       if err != nil {
         log.Printf("error calling json.Marshal to json-string-encode infoUpdate: %v\n", err)
         return
       }
-      err = ws.WriteJSON(jsonMessage)
+      err = ws.WriteJSON(infoUpdate)
       if err != nil {
         log.Printf("error: %v", err)
         break

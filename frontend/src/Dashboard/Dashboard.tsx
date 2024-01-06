@@ -7,11 +7,32 @@ import PacketDetails from "@/Dashboard/PacketDetails/PacketDetails";
 import PacketList from "@/Dashboard/PacketList/PacketList";
 import PanelLayout from "@/Dashboard/General/PanelLayout";
 import {
-  dummyPacket,
+  // dummyPacket,
   getPacketById_TODO_perf,
+  infoUpdateFromJsonStr,
+  ProtoL3,
   sampleConnections,
+  updateConnectionsFromInfoUpdate,
 } from "@/Dashboard/connectionData";
 import type { ConnectionData, DisplayPacket } from "@/Dashboard/connectionData";
+
+const dummyPacket: DisplayPacket = {
+  id: -1,
+  packetNumLocal: 0,
+  connectionId: -1,
+  ipHeaderRaw: "",
+  l3HeaderRaw: "",
+  srcIP: "",
+  dstIP: "",
+  srcPort: "",
+  dstPort: "",
+  proto: ProtoL3.TCP,
+  len: 1,
+  ts: new Date().getTime(),
+  tsFmt: "",
+  manips: [],
+  saved: true,
+};
 
 export interface TableComponentState {
   selectedItemSignal?: Signal<number>;
@@ -83,6 +104,18 @@ export function reloadSelectedPacketGlobal() {
 
 export default class Dashboard extends Component {
   render() {
+    const ws = new WebSocket("ws://localhost:8080/ws");
+    ws.onopen = () => {
+      console.log("Connected to the WebSocket");
+    };
+
+    ws.onmessage = (event) => {
+      console.log("got msg: ", event.data);
+      const dataAny = JSON.parse(event.data);
+      const infoUpdate = infoUpdateFromJsonStr(dataAny);
+      console.log("infoUpdate: ", infoUpdate);
+      updateConnectionsFromInfoUpdate(infoUpdate);
+    };
     // const connections = signal<ConnectionData[]>(sampleConnections);
     dashboardComponentSignals.connectionList.dataRows.value = sampleConnections;
     // console.log(

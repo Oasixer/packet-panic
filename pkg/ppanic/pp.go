@@ -76,14 +76,14 @@ type SkippedPacket struct {
 }
 
 type ConnectionUpdate struct {
-  ConnectionId string `json:"id"`
+  ConnectionId string `json:"connectionHashId"`
   // SpeedGBps float32 `json:"speedGBps"`
   NewPackets []DisplayPacket `json:"newPackets"`
   SkippedPackets []SkippedPacket `json:"skippedPackets"`
 }
 
 type ConnectionData struct {
-  Id string `json:"id"`
+  Id string `json:"hashId"`
   NPackets uint64 `json:"nPackets"`
   SrcIP net.IP `json:"srcIP"`
   DstIP net.IP `json:"dstIP"`
@@ -96,7 +96,7 @@ type ConnectionData struct {
 }
 
 type InfoUpdate struct {
-  NewConnections []ConnectionData `json:"connections"`
+  NewConnections []ConnectionData `json:"newConnections"`
   ConnectionUpdates []ConnectionUpdate `json:"connectionUpdates"`
 }
 
@@ -108,8 +108,8 @@ type Manipulation struct {
 
 type DisplayPacket struct {
   Id string `json:"id"`
-  ConnectionId string `json:"connectionId"`
-  ConnPacketNum int64 `json:"connPacketNum"`
+  ConnectionId string `json:"connectionHashId"`
+  // ConnPacketNum int64 `json:"connPacketNum"`
   IpHeader IpHeader
   UdpHeader UdpHeader
   IpHeaderRaw string `json:"ipHeader"`
@@ -250,7 +250,8 @@ func ConnectionFromKnownClients(knownClients []config.KnownClient, udpSrcPort, u
         dstIP = net.ParseIP(knownClient.IP1)
       }
       return &ConnectionData{
-        Id: uuid.New().String(),
+        Id:  fmt.Sprintf("%s:%d-%d", "UDP", udpSrcPort, udpDstPort),
+        // Id: uuid.New().String(),
         NPackets: 1,
         SrcIP: srcIP,
         DstIP: dstIP,

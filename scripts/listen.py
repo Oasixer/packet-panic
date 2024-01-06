@@ -22,7 +22,8 @@ def main():
             # Prepare the response message
             response_msg = f"I received <{received_msg}> from <{addr[0]}:{addr[1]}>"
             # Send the response back to the sender
-            s.sendto(response_msg.encode('utf-8'), addr)
+            print("temp disabled response msg!")
+            # s.sendto(response_msg.encode('utf-8'), addr)
 
 if __name__ == "__main__":
     main()
