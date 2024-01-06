@@ -24,18 +24,20 @@ export default class PacketDetails extends Component<PacketDetailsProps> {
         title="Packet Details"
         icon={<BoxIcon />}
         content={
-          <div className="flex flex-col flex-nowrap gap-1">
-            <PacketDetailsReadouts displayPacket={displayPacket} />
-            <PacketManipulations />
-            <Accordion
-              title="Raw Packet"
-              icon={<RawIcon />}
-              content={<RawPacketSection displayPacket={displayPacket} />}
-              openSignal={
-                dashboardComponentSignals.rawPacket.accordionEnableSignal
-              }
-            />
-          </div>
+          displayPacket.value && (
+            <div className="flex flex-col flex-nowrap gap-1">
+              <PacketDetailsReadouts displayPacket={displayPacket} />
+              <PacketManipulations />
+              <Accordion
+                title="Raw Packet"
+                icon={<RawIcon />}
+                content={<RawPacketSection displayPacket={displayPacket} />}
+                openSignal={
+                  dashboardComponentSignals.rawPacket.accordionEnableSignal
+                }
+              />
+            </div>
+          )
         }
         openSignal={
           dashboardComponentSignals.packetDetails.base.accordionEnableSignal

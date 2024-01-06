@@ -110,12 +110,13 @@ type DisplayPacket struct {
   Id string `json:"id"`
   ConnectionId string `json:"connectionHashId"`
   // ConnPacketNum int64 `json:"connPacketNum"`
-  IpHeader IpHeader
-  UdpHeader UdpHeader
-  IpHeaderRaw string `json:"ipHeader"`
+  // IpHeader IpHeader
+  // UdpHeader UdpHeader
+  IpHeaderRaw string `json:"ipHeaderRaw"`
   L3HeaderRaw string `json:"l3HeaderRaw"`
+  L3PayloadRaw string `json:"l3PayloadRaw"`
   Ts int64 `json:"ts"`
-  Len int32 `json:"len"`
+  // Len int `json:"len"`
   Manips []Manipulation `json:"manips"`
 }
 
@@ -277,7 +278,7 @@ type Change struct{
 }
 
 // header type is from golang.org/x/net/ipv4 btw
-func handleUdpPacket(ip_Header* ipv4.Header, ipHeaderRaw []byte, udpRaw []byte, displayPacketQ chan InfoUpdate, raw []byte) (*DisplayPacket, error){
+func handleUdpPacket(ipHeader* ipv4.Header, ipHeaderRaw []byte, udpRaw []byte, displayPacketQ chan InfoUpdate, raw []byte) (*DisplayPacket, error){
 
   udpHeader := udpRaw[0:8] // 8 bytes of UDP header
   log.Printf("udpRaw len: %v", len(udpRaw))
@@ -310,37 +311,41 @@ func handleUdpPacket(ip_Header* ipv4.Header, ipHeaderRaw []byte, udpRaw []byte, 
     PP.connections.Set(hash, curConnection)
   }
 
-  updateIpUsingConnection(curConnection, ip_Header)
+  updateIpUsingConnection(curConnection, ipHeader)
   
   // Fix UDP checksum which is for some reason based on src and dest IP addresses
   // from the IP packet header even though UDP is layer 4... 
   // at this point the header.Src and header.Dst must have been set correctly already!!!
-  UpdateUdpChecksum(ip_Header, udpHeader, udpPayload)
+  UpdateUdpChecksum(ipHeader, udpHeader, udpPayload)
 
   // firstPacketEver := curConnection.lastPacketTs == 0
   // nowMillis := time.Now().UnixMilli()
   // if timeToUpdateDisplayPackets(curConnection){
 
-  var displayIpHeader IpHeader
-  var displayUdpHeader UdpHeader
-  err := displayUdpHeader.FromBytes(udpHeader)
-  if err != nil {
-    return nil, errors.New(fmt.Sprintf("Error decoding UDP header: %s", err.Error()))
-  }
+  // var displayIpHeader IpHeader
+  // var displayUdpHeader UdpHeader
+  // err := displayUdpHeader.FromBytes(udpHeader)
+  // if err != nil {
+    // return nil, errors.New(fmt.Sprintf("Error decoding UDP header: %s", err.Error()))
+  // }
 
+
+  // log.Printf("Len: %v", displayIpHeader.TotalLen)
   // at this point all contents here have either been copied from bytes or encoded to string
   // so no mtability worries
   displayPacket := DisplayPacket{
     Id: uuid.New().String(),
     ConnectionId: curConnection.Id,
-    IpHeader: displayIpHeader,
-    UdpHeader: displayUdpHeader,
+    // IpHeader: displayIpHeader,
+    // UdpHeader: displayUdpHeader,
     IpHeaderRaw: hex.EncodeToString(ipHeaderRaw),
     L3HeaderRaw: hex.EncodeToString(udpHeader),
+    L3PayloadRaw: hex.EncodeToString(udpPayload),
     // todo: potentially use b64 for performance? but ummmmm at that point maybe this isnt the way...
     // B64RawL3Header: base64.StdEncoding.EncodeToString(udpHeader),
     // B64RawL3Payload: base64.StdEncoding.EncodeToString(udpPayload),
     Ts: nowMillis,
+    // Len: displayIpHeader.TotalLen,
     Manips: make([]Manipulation, 0),
   }
 

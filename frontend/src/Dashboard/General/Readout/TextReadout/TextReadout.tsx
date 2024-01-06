@@ -14,8 +14,8 @@ export type TextReadoutProps = {
 export default class TextReadout extends Component<TextReadoutProps> {
   render() {
     const { label, dataSignal, propName, fmt } = this.props;
-    console.log("propName", propName);
-    console.log("dataSignal.value:", dataSignal.value);
+    // console.log("propName", propName);
+    // console.log("dataSignal.value:", dataSignal.value);
     let _fmt = fmt;
     if (_fmt === undefined) {
       _fmt = (stringy: string) => {
@@ -27,7 +27,11 @@ export default class TextReadout extends Component<TextReadoutProps> {
         label={label ?? propName}
         valueElement={
           <TextReadoutValue
-            valueStr={_fmt(dataSignal.value[propName]) ?? "_dne"}
+            valueStr={
+              _fmt(
+                dataSignal.value ? dataSignal.value[propName] : "NO_PACKET",
+              ) ?? "_dne"
+            }
           />
         }
       />

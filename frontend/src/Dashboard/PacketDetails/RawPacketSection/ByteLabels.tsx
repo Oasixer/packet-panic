@@ -22,7 +22,7 @@ export default class ByteLabel extends Component<ByteLabelProps> {
         labels.push("byte" + (i + 1).toString());
       }
     }
-    console.log("labels: ", labels);
+    // console.log("labels: ", labels);
     return (
       <div className="flex flex-row justify-around h-4 font-monoCP text-sz3.5 mb-[-2px] mt-[-4px]">
         {labels.map((label) => (

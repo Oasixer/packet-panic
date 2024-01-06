@@ -26,7 +26,7 @@ export default class ConnectionPackets extends Component<ConnectionPacketsProps>
     ];
 
     const dataSignal: Signal<DisplayPacket[]> = computed(() => {
-      return connectionData.value.packets;
+      return connectionData.value ? connectionData.value.packets : [];
     });
     return (
       <Table

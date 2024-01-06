@@ -79,11 +79,11 @@ export const dashboardComponentSignals: DashboardComponentSignals = {
   // packetList: { accordionEnableSignal: signal<boolean>(false) },
   packetList: { accordionEnableSignal: signal<boolean>(true) },
   allPackets: {
-    base: { accordionEnableSignal: signal<boolean>(false) },
+    base: { accordionEnableSignal: signal<boolean>(true) },
     selectedItemSignal: signal<number>(0),
     dataRows: signal<any[]>([]),
   },
-  savedPackets: { accordionEnableSignal: signal<boolean>(false) },
+  savedPackets: { accordionEnableSignal: signal<boolean>(true) },
   packetDetails: {
     displayPacket: signal<DisplayPacket>(dummyPacket),
     base: { accordionEnableSignal: signal<boolean>(true) },

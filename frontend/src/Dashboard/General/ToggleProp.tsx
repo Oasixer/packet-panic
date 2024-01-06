@@ -18,7 +18,9 @@ export type TogglePropProps = {
 export default class ToggleProp extends Component<TogglePropProps> {
   render() {
     const { packetComputed, propName } = this.props;
-    const isChecked = packetComputed.value[propName];
+    const isChecked = packetComputed.value
+      ? packetComputed.value[propName]
+      : false;
     console.log("reload ya boi", packetComputed.value);
     const click = () => {
       packetComputed.value[propName] = !packetComputed.value[propName];

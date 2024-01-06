@@ -15,7 +15,7 @@ export type RawPacketRowProps = {
 export default class RawPacketRow extends Component<RawPacketRowProps> {
   render() {
     const { displayPacket, rowFields, packetTypeMeta, fmtProp } = this.props;
-    console.log(rowFields, "rowFields");
+    // console.log(rowFields, "rowFields");
     return (
       <div className="flex flex-row gap-1">
         {rowFields.map((field) => (

@@ -61,7 +61,7 @@ export function getFieldValueById(
   id: string,
   headerRaw: string,
 ): string {
-  console.log("id: ", id);
+  // console.log("id: ", id);
   let field: Field | undefined;
   for (const row of fields) {
     field = row.find((f) => (f.id as unknown as string) === id); // as string doesn't work here... neither type sufficiently overlaps with the other??

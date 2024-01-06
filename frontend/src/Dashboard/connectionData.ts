@@ -41,8 +41,9 @@ export interface JsonPacket {
   connPacketNum: number; // eg. autoincrementing packet num within this connection
   ipHeaderRaw: string;
   l3HeaderRaw: string;
+  l3PayloadRaw: string;
   ts: number;
-  len: number;
+  // len: number;
   manips: Manipulation[];
 }
 
@@ -52,6 +53,7 @@ export interface DisplayPacket {
   connectionId: number;
   ipHeaderRaw: string;
   l3HeaderRaw: string;
+  l3PayloadRaw: string;
   srcIP: string;
   dstIP: string;
   srcPort: string;
@@ -104,94 +106,94 @@ export function getPacketById_TODO_perf(
 //   packet: PacketData,
 // ) {}
 
-export let sampleConnections: ConnectionData[] = [
-  {
-    id: 0,
-    hashId: "x",
-    nPackets: 1650,
-    srcIP: "192.168.0.1",
-    dstIP: "192.168.0.1",
-    srcPort: "12345",
-    dstPort: "8001",
-    protocol: ProtoL3.TCP,
-    // speedGBps: 69,
-    // displayPackets: [],
-    lastPacketTs: 0,
-    packets: [
-      {
-        id: 0,
-        packetNumLocal: 0,
-        connectionId: 0,
-        ipHeaderRaw: "455802381a2b0000030604d2c0a80105efffffff",
-        l3HeaderRaw: "13881f91000e04d2aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        srcIP: "192.168.0.1",
-        dstIP: "223.150.1.1",
-        srcPort: "12345",
-        dstPort: "8001",
-        proto: ProtoL3.TCP,
-        len: 456,
-        ts: new Date().getTime(),
-        tsFmt: fmtTs(new Date().getTime()),
-        manips: [],
-        saved: true,
-      },
-      {
-        id: 2,
-        packetNumLocal: 1,
-        connectionId: 0,
-        ipHeaderRaw: "455811111a2b0000030604d2c0a801051aaaaaaf",
-        l3HeaderRaw: "13881f91000e04d2",
-        srcIP: "224.168.0.1",
-        dstIP: "192.168.0.1",
-        srcPort: "12345",
-        dstPort: "8001",
-        proto: ProtoL3.TCP,
-        len: 53,
-        ts: new Date().getTime(),
-        tsFmt: fmtTs(new Date().getTime()),
-        manips: [],
-        saved: false,
-
-        // lengthBytes:
-      },
-    ],
-  },
-  {
-    id: 1,
-    hashId: "y", // TODO: ...
-    nPackets: 238,
-    srcIP: "192.241.6.1",
-    dstIP: "192.168.0.2",
-    srcPort: "12345",
-    dstPort: "6969",
-    protocol: ProtoL3.UDP,
-    // speedGBps: 0.42,
-    // displayPackets: [],
-    lastPacketTs: 0,
-    packets: [
-      {
-        id: 1,
-        packetNumLocal: 0,
-        // packetNumLocal: 0,
-        connectionId: 1,
-        ipHeaderRaw: "455800151a2b0000031704d2c0a80105efffffff",
-        l3HeaderRaw: "13881f91000e04d2",
-        srcIP: "224.168.0.1",
-        dstIP: "192.168.0.1",
-        srcPort: "12345",
-        dstPort: "8001",
-        proto: ProtoL3.UDP,
-        len: 520,
-        ts: new Date().getTime(),
-        tsFmt: fmtTs(new Date().getTime()),
-        manips: [],
-        saved: false,
-
-        // lengthBytes:
-      },
-    ],
-  },
-];
+export let sampleConnections: ConnectionData[] = [];
+//   {
+//     id: 0,
+//     hashId: "x",
+//     nPackets: 1650,
+//     srcIP: "192.168.0.1",
+//     dstIP: "192.168.0.1",
+//     srcPort: "12345",
+//     dstPort: "8001",
+//     protocol: ProtoL3.TCP,
+//     // speedGBps: 69,
+//     // displayPackets: [],
+//     lastPacketTs: 0,
+//     packets: [
+//       {
+//         id: 0,
+//         packetNumLocal: 0,
+//         connectionId: 0,
+//         ipHeaderRaw: "455802381a2b0000030604d2c0a80105efffffff",
+//         l3HeaderRaw: "13881f91000e04d2aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+//         srcIP: "192.168.0.1",
+//         dstIP: "223.150.1.1",
+//         srcPort: "12345",
+//         dstPort: "8001",
+//         proto: ProtoL3.TCP,
+//         len: 456,
+//         ts: new Date().getTime(),
+//         tsFmt: fmtTs(new Date().getTime()),
+//         manips: [],
+//         saved: true,
+//       },
+//       {
+//         id: 2,
+//         packetNumLocal: 1,
+//         connectionId: 0,
+//         ipHeaderRaw: "455811111a2b0000030604d2c0a801051aaaaaaf",
+//         l3HeaderRaw: "13881f91000e04d2",
+//         srcIP: "224.168.0.1",
+//         dstIP: "192.168.0.1",
+//         srcPort: "12345",
+//         dstPort: "8001",
+//         proto: ProtoL3.TCP,
+//         len: 53,
+//         ts: new Date().getTime(),
+//         tsFmt: fmtTs(new Date().getTime()),
+//         manips: [],
+//         saved: false,
+//
+//         // lengthBytes:
+//       },
+//     ],
+//   },
+//   {
+//     id: 1,
+//     hashId: "y", // TODO: ...
+//     nPackets: 238,
+//     srcIP: "192.241.6.1",
+//     dstIP: "192.168.0.2",
+//     srcPort: "12345",
+//     dstPort: "6969",
+//     protocol: ProtoL3.UDP,
+//     // speedGBps: 0.42,
+//     // displayPackets: [],
+//     lastPacketTs: 0,
+//     packets: [
+//       {
+//         id: 1,
+//         packetNumLocal: 0,
+//         // packetNumLocal: 0,
+//         connectionId: 1,
+//         ipHeaderRaw: "455800151a2b0000031704d2c0a80105efffffff",
+//         l3HeaderRaw: "13881f91000e04d2",
+//         srcIP: "224.168.0.1",
+//         dstIP: "192.168.0.1",
+//         srcPort: "12345",
+//         dstPort: "8001",
+//         proto: ProtoL3.UDP,
+//         len: 520,
+//         ts: new Date().getTime(),
+//         tsFmt: fmtTs(new Date().getTime()),
+//         manips: [],
+//         saved: false,
+//
+//         // lengthBytes:
+//       },
+//     ],
+//   },
+// ];
 
 function getConnection(
   connections: ConnectionData[],
@@ -241,18 +243,25 @@ export function updateConnectionsFromInfoUpdate(
     }
 
     for (var jsonPacket of connectionUpdate.newPackets) {
+      console.log("jsonPacket: ", jsonPacket);
+      let len =
+        (jsonPacket.ipHeaderRaw.length +
+          jsonPacket.l3HeaderRaw.length +
+          jsonPacket.l3PayloadRaw.length) /
+        2;
       const newPacket: DisplayPacket = {
         id: totalNPackets,
         packetNumLocal: relevantConnection.nPackets,
         connectionId: relevantConnection.id,
         ipHeaderRaw: jsonPacket.ipHeaderRaw,
-        l3HeaderRaw: jsonPacket.ipHeaderRaw,
+        l3HeaderRaw: jsonPacket.l3HeaderRaw,
+        l3PayloadRaw: jsonPacket.l3PayloadRaw,
         srcIP: relevantConnection.srcIP,
         dstIP: relevantConnection.dstIP,
         srcPort: relevantConnection.srcPort,
         dstPort: relevantConnection.dstPort,
         proto: relevantConnection.protocol,
-        len: jsonPacket.len,
+        len: len,
         ts: jsonPacket.ts,
         tsFmt: fmtTs(jsonPacket.ts),
         manips: jsonPacket.manips,

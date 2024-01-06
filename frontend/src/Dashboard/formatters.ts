@@ -21,7 +21,7 @@ export function fmtTs(unixMillis) {
 }
 
 export function fmtIp(ipHex: string): string {
-  console.log("__IP: ", ipHex);
+  // console.log("__IP: ", ipHex);
   if (ipHex.length !== 8) {
     console.log("INVALID_IP", ipHex);
     return "INVALID_IP";
