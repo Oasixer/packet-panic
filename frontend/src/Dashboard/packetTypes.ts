@@ -442,8 +442,8 @@ export enum TcpHeaderField {
   windowSize = "windowSize",
   checksum = "checksum",
   urgentPointer = "urgentPointer",
-  options = "options",
-  padding = "padding",
+  // options = "options", // assume always null and omit for now
+  // padding = "padding",  // assume always null and omit for now
 }
 
 export const tcpHeaderFields: Field[][] = [

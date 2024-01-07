@@ -165,7 +165,7 @@ func HandleIpPacket(buf []byte, buf_len int, tun2EthQ chan Packet, displayPacket
       displayPacket = _displayPacket
     }
   } else {
-    log.Printf("Header was not UDP!: %v", header.Protocol)
+    log.Debug().Msgf("Header protocol not supported: %v", header.Protocol)
     return false
   }
 
@@ -173,6 +173,7 @@ func HandleIpPacket(buf []byte, buf_len int, tun2EthQ chan Packet, displayPacket
     fmt.Println("error: nil packet")
     return false // for sanity
   }
+
   packet := Packet{
     ipHeader: header,
     payload: payload,
@@ -201,6 +202,8 @@ func HandleIpPacket(buf []byte, buf_len int, tun2EthQ chan Packet, displayPacket
     NewConnections: connections,
     ConnectionUpdates: connectionUpdates,
   }
+
+  log.Debug().Msgf("\nPut infoUpdate in displayPacketQ: %v", infoUpdate)
   // enqueue the info before actually running delays etc.
   displayPacketQ <- infoUpdate
 
@@ -229,7 +232,6 @@ func HandleIpPacket(buf []byte, buf_len int, tun2EthQ chan Packet, displayPacket
 
 
 func ConnectionFromKnownClients(knownClients []config.KnownClient, udpSrcPort, udpDstPort uint16, protoStr string) (*ConnectionData, bool){
-  log.Printf("knownClients len: %v", len(knownClients));
   for i := 0; i < len(knownClients); i++ {
     knownClient := knownClients[i]
     p1 := uint16(knownClient.Port1)
@@ -242,8 +244,6 @@ func ConnectionFromKnownClients(knownClients []config.KnownClient, udpSrcPort, u
     // log.Printf("ports_match: %v", ports_match);
     // log.Printf("!!!!!!!!backward_match: %v", backward_match);
     // log.Printf("proto_match: %v", proto_match);
-    log.Printf("")
-    log.Printf("                    %v -> %v", udpSrcPort, udpDstPort);
   
     // todo mild refactor
     if (ports_match || backward_match) && proto_match{
@@ -287,7 +287,7 @@ func handleTcpPacket(ipHeader* ipv4.Header, ipHeaderRaw []byte, tcpRaw []byte, r
   tcpSrcPort := binary.BigEndian.Uint16(tcpRaw[0:2]) // Source port is the first 2 bytes
   tcpDstPort := binary.BigEndian.Uint16(tcpRaw[2:4]) // Destination port is the next 2 bytes
   hash := fmt.Sprintf("%s:%d-%d", "TCP", tcpSrcPort, tcpDstPort)
-  log.Printf("handleTcpPacket: hash: %v", hash)
+  log.Printf("\nhandleTcpPacket: hash: %v", hash)
 
   var curConnection *ConnectionData = nil
 

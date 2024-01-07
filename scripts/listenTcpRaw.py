@@ -3,7 +3,7 @@ import struct
 import sys
 
 HOST = '192.168.2.216'
-PORT = 9081
+PORT = 9083
 
 def checksum(msg):
     s = 0
@@ -54,7 +54,7 @@ def main():
 
         src_port, dest_port = tcph[0], tcph[1]
 
-        if dest_port != 9081:
+        if dest_port != 8081:
             # print(f'skipped dest_port: {dest_port}')
             continue
 
@@ -96,7 +96,7 @@ def main():
 
             response_msg = tcp_header
 
-            s.sendto(response_msg, addr)
+            # s.sendto(response_msg, addr)
 
 if __name__ == "__main__":
     main()

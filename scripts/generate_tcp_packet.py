@@ -2,7 +2,7 @@ import struct
 
 # TCP Header fields
 srcPort = 7000           # Source port
-dstPort = 9081           # Destination port
+dstPort = 8081           # Destination port
 sequenceNumber = 1234       # Sequence number
 ackNumber = 43210            # Acknowledgment number
 headerLen = 5            # Header length (5x4 = 20 bytes, no options)

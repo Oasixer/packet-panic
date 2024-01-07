@@ -9,7 +9,7 @@ args = parser.parse_args()
 # Configuration
 # IP = "69.69.69.2"
 IP = "192.168.2.216"
-PORT = 9081
+PORT = 8081
 LISTEN_PORT = 7000  # Port on which we will listen for the response
 BUFFER_SIZE = 1024  # Define a buffer size for receiving data
 TIMEOUT = 5  # Timeout in seconds for waiting for a response

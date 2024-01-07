@@ -1,7 +1,7 @@
 import socket
 
 HOST = '192.168.2.216'
-PORT = 9081
+PORT = 8081
 
 
 def main():
