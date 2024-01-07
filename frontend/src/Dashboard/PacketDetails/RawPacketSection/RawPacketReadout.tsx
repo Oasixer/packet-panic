@@ -4,7 +4,7 @@ import { Signal } from "@preact/signals";
 import { DisplayPacket } from "@/Dashboard/connectionData";
 import {
   FmtTypePropName,
-  fmtByteToDec,
+  fmtBytesToDec,
   fmtDoNothing,
   fmtOrDefault,
 } from "@/Dashboard/formatters";
@@ -26,16 +26,28 @@ const PAD = 4;
 const halfByteSizes: { [key in FmtTypePropName]: number } = {
   [FmtTypePropName.hexFmt]: 20,
   [FmtTypePropName.decFmt]: 20,
-  [FmtTypePropName.labelFmt]: 32,
+  [FmtTypePropName.labelFmt]: 40,
 };
 
-function getReadoutWidth(fmtProp: FmtTypePropName, nBytes: number): number {
-  let displayNBytes = 0.5;
+export function getReadoutWidth(
+  fmtProp: FmtTypePropName,
+  nBits: number,
+  field?: Field,
+): number {
+  // rather jank code to handle 6 bit fields
+  // by calculating (((16 bit)-(4 bit)-(pad))-pad)/2
+  if (field && field.lenBits === 6) {
+    let remainingSpaceAfterHalfByte =
+      getReadoutWidth(fmtProp, 16) - getReadoutWidth(fmtProp, 4) - PAD;
+    const final = (remainingSpaceAfterHalfByte - PAD) / 2;
+    return final;
+  }
+  let displayNBits = 4; // starting from half-byte, which is 4 bits
   let displayPixels = halfByteSizes[fmtProp];
-  while (displayNBytes < nBytes) {
+  while (displayNBits < nBits) {
     displayPixels *= 2;
     displayPixels += PAD;
-    displayNBytes *= 2;
+    displayNBits *= 2;
   }
   return displayPixels;
 }
@@ -53,7 +65,7 @@ function fmtOrDefaultWithHex(
   if (fmtProp === FmtTypePropName.hexFmt) {
     return fmtDoNothing;
   }
-  return fmtByteToDec;
+  return fmtBytesToDec;
 }
 
 function decideDisplayText(
@@ -66,8 +78,10 @@ function decideDisplayText(
   if (fmtProp === FmtTypePropName.labelFmt) {
     return packetTypeMeta.labelSubs(field.label ?? field.id);
   }
-  let fmt = fmtOrDefaultWithHex(fmtProp, field[fmtProp]);
-  return fmt(byte);
+  const fmt = fmtOrDefaultWithHex(fmtProp, field[fmtProp]);
+  const fmtText = fmt(byte);
+  console.log("fmtText:", fmtText);
+  return fmtText;
 }
 
 export default class RawPacketReadout extends Component<RawPacketReadoutProps> {
@@ -77,6 +91,7 @@ export default class RawPacketReadout extends Component<RawPacketReadoutProps> {
     return (
       <div className="flex flex-row gap-1">
         {splitBytes(
+          // should return ["xx", "xx", ...] or ["xxxx..."] depending on field.splitBytesInFmt
           getFieldValueByField(
             field,
             displayPacket.value[packetTypeMeta.headerProp],
@@ -86,9 +101,7 @@ export default class RawPacketReadout extends Component<RawPacketReadoutProps> {
         ).map((byte: string) => (
           <div
             style={{
-              // width: byteSizes[field.lenBytes.toString()] + "px",
-              // width: byteSizes[(byte.length / 2).toString()] + "px",
-              width: getReadoutWidth(fmtProp, byte.length / 2),
+              width: getReadoutWidth(fmtProp, byte.length * 4, field),
               backgroundColor: field.color,
             }}
             className="h-5 flex flex-row items-center justify-center"

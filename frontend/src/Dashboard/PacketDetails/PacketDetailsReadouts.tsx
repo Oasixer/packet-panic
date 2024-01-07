@@ -8,7 +8,7 @@ import ToggleReadout from "@/Dashboard/General/Readout/ToggleReadout";
 import HeaderTextReadout from "@/Dashboard/General/Readout/TextReadout/HeaderTextReadout/HeaderTextReadout";
 import { dashboardComponentSignals } from "@/Dashboard/Dashboard";
 
-import { fmtIp, fmtPort, fmtTs } from "@/Dashboard/formatters";
+import { fmtIp, fmt2BytesToDec, fmtTs } from "@/Dashboard/formatters";
 
 import {
   IpHeaderField,
@@ -58,7 +58,9 @@ export default class PacketDetailsReadouts extends Component<PacketDetailsReadou
           dataSignal={displayPacket}
           propId={IpHeaderField.totalLen}
           packetTypeMeta={ipPacketMeta}
-          fmt={fmtPort} /* port := 2 bytes to display as int, like totalLen */
+          fmt={
+            fmt2BytesToDec
+          } /* port := 2 bytes to display as int, like totalLen */
         />
 
         <HeaderTextReadout
@@ -79,13 +81,13 @@ export default class PacketDetailsReadouts extends Component<PacketDetailsReadou
           dataSignal={displayPacket}
           propId={UdpHeaderField.srcPort}
           packetTypeMeta={udpPacketMeta}
-          fmt={fmtPort}
+          fmt={fmt2BytesToDec}
         />
         <HeaderTextReadout
           dataSignal={displayPacket}
           propId={UdpHeaderField.dstPort}
           packetTypeMeta={udpPacketMeta}
-          fmt={fmtPort}
+          fmt={fmt2BytesToDec}
         />
         <ToggleProp packetComputed={displayPacket} propName="saved" />
         <button

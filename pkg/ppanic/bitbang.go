@@ -69,24 +69,65 @@ func onesComplementAdd(a, b uint32) uint32 {
   return sum + (sum >> 16)
 }
 
+func UpdateTcpChecksum(header *ipv4.Header, tcpHeader, tcpPayload []byte) {
+    tcpHeader[16] = 0 // Clear the checksum bytes
+    tcpHeader[17] = 0
+    checksum := ComputeTcpChecksum(header.Src, header.Dst, tcpHeader, tcpPayload)
+    log.Printf("checksum: 0x%x%x", byte(checksum>>8), byte(checksum&0xFF))
+
+    tcpHeader[16] = byte(checksum >> 8) // Update header with new checksum
+    tcpHeader[17] = byte(checksum & 0xFF)
+}
+
+func ComputeTcpChecksum(src, dst net.IP, tcpHeader, tcpPayload []byte) uint16 {
+    tcpLength := uint16(len(tcpHeader) + len(tcpPayload))
+    var sum uint32
+
+    // Sum pseudo-header
+    pseudoHeader := []byte{
+        src.To4()[0], src.To4()[1], src.To4()[2], src.To4()[3],
+        dst.To4()[0], dst.To4()[1], dst.To4()[2], dst.To4()[3],
+        0, 6, // TCP protocol number is 6
+        byte(tcpLength >> 8), byte(tcpLength),
+    }
+    for i := 0; i < len(pseudoHeader); i += 2 {
+        sum += uint32(pseudoHeader[i])<<8 | uint32(pseudoHeader[i+1])
+    }
+
+    // Sum TCP header
+    for i := 0; i < len(tcpHeader); i += 2 {
+        sum += uint32(tcpHeader[i])<<8 | uint32(tcpHeader[i+1])
+    }
+
+    // Sum TCP payload
+    for i := 0; i < len(tcpPayload); i += 2 {
+        if i == len(tcpPayload)-1 {
+            sum += uint32(tcpPayload[i]) << 8 // If odd number of bytes, pad with zero
+        } else {
+            sum += uint32(tcpPayload[i])<<8 | uint32(tcpPayload[i+1])
+        }
+    }
+
+    // Finalize checksum calculation
+    for sum>>16 != 0 {
+        sum = (sum & 0xFFFF) + (sum >> 16)
+    }
+    return ^uint16(sum)
+}
+
+
 func UpdateUdpChecksum(header *ipv4.Header, udpHeader, udpPayload []byte) {
   udpHeader[6] = 0
   udpHeader[7] = 0
-  checksum := ComputeUDPChecksum(header.Src, header.Dst, udpHeader, udpPayload)
+  checksum := ComputeUdpChecksum(header.Src, header.Dst, udpHeader, udpPayload)
   log.Printf("checksum: 0x%x%x", byte(checksum >> 8), byte(checksum & 0xFF))
-  // checksum2 := UpdateChecksumForNewIPs(udpHeader[6:8], oldSrc, oldDst, header.Src, header.Dst)
 
   udpHeader[6] = byte(checksum >> 8) // update header w/ new checksum
   udpHeader[7] = byte(checksum & 0xFF)
 }
 
-func ComputeUDPChecksum(src, dst net.IP, udpHeader, udpPayload []byte) uint16 {
+func ComputeUdpChecksum(src, dst net.IP, udpHeader, udpPayload []byte) uint16 {
     udpLength := uint16(len(udpHeader) + len(udpPayload))
-
-    log.Printf("CHECKSUM. udpHeaderLen: %v", len(udpHeader));
-    log.Printf("CHECKSUM. udpPayloadLen: %v", len(udpPayload));
-    log.Printf("CHECKSUM. udpLength: %v", udpLength);
-    log.Printf("CHECKSUM. src, dst: %v, %v", src, dst);
     var sum uint32
 
     // Sum pseudo-header
@@ -99,13 +140,11 @@ func ComputeUDPChecksum(src, dst net.IP, udpHeader, udpPayload []byte) uint16 {
     for i := 0; i < len(pseudoHeader); i += 2 {
         sum += uint32(pseudoHeader[i])<<8 | uint32(pseudoHeader[i+1])
     }
-    log.Printf("Sum after pseudoHeader: %v", sum);
 
     // Sum UDP header
     for i := 0; i < len(udpHeader); i += 2 {
         sum += uint32(udpHeader[i])<<8 | uint32(udpHeader[i+1])
     }
-    log.Printf("Sum after udpHeader: %v", sum);
 
     // Sum UDP payload
     for i := 0; i < len(udpPayload); i += 2 {
@@ -115,7 +154,6 @@ func ComputeUDPChecksum(src, dst net.IP, udpHeader, udpPayload []byte) uint16 {
             sum += uint32(udpPayload[i])<<8 | uint32(udpPayload[i+1])
         }
     }
-    log.Printf("Sum after udpPayload: %v", sum);
 
     // Finalize checksum calculation
     for sum>>16 != 0 {

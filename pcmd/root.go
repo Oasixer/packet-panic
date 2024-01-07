@@ -189,12 +189,10 @@ func Root(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	delayerConfig := ppanic.NewDelayerConfig(200*time.Millisecond, 800*time.Millisecond)
-	delayer := ppanic.NewDelayer(delayerConfig)
+	// delayerConfig := ppanic.NewDelayerConfig(200*time.Millisecond, 800*time.Millisecond)
+	// delayer := ppanic.NewDelayer(delayerConfig)
 	manips := []ppanic.PacketManipulator{
-		// ppanic.NewDelayer(1000*time.Millisecond, 7000*time.Millisecond),
-		// ppanic.NewDelayer(delayerConfig),
-		delayer,
+		// delayer,
 	}
 
 	eg.Go(func() error {

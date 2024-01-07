@@ -127,7 +127,6 @@ func HandleIpPacket(buf []byte, buf_len int, tun2EthQ chan Packet, displayPacket
     // log.Printf("ipv6");
     return true// exit if not ipv4
   }
-  // log.Debug().Msgf("buf_len: %d", buf_len)
 
   header, err := ipv4.ParseHeader(buf)
   if err != nil {
@@ -135,29 +134,29 @@ func HandleIpPacket(buf []byte, buf_len int, tun2EthQ chan Packet, displayPacket
     return false
   }
 
-  // log.Printf("HandleIpPacket: len(buf), buf_len %v, %v", len(buf), buf_len)
-  log.Printf("buf[:buf_len+5]: %v", buf[:buf_len])
-  // oldSrc := header.Src
-  // oldDst := header.Dst
-  // header.Src = config.Config.IFaceAddr
-  // header.Src = oldDst
-  log.Printf("prev header.TotalLen: %v", header.TotalLen)
+  // log.Printf("buf[:buf_len+5]: %v", buf[:buf_len])
+  // log.Printf("prev header.TotalLen: %v", header.TotalLen)
   header.TotalLen = buf_len
   header.Checksum = 0 // checksum is recalculated in the socket write
 
-  log.Printf("final header.TotalLen: %v", header.TotalLen)
-  log.Printf("header.Len: %v", header.Len)
+  // log.Printf("final header.TotalLen: %v", header.TotalLen)
+  // log.Printf("header.Len: %v", header.Len)
   headerRaw := buf[:header.Len]
   payload := buf[header.Len:buf_len]
 
   var displayPacket *DisplayPacket = nil
-  log.Printf("proto: %v", header.Protocol);
+  // log.Printf("proto: %v", header.Protocol);
   if (header.Protocol == 6) {
-    // TODO: handle TCP
-    log.Printf("skipping TCP!")
-    return false
+    _displayPacket, err := handleTcpPacket(header, headerRaw, payload, buf)
+    if err != nil {
+      log.Printf("Failed to parse TCP packet %v", err)
+      return false
+    } else {
+      displayPacket = _displayPacket
+    }
   } else if (header.Protocol == 17) { // UDP
-    _displayPacket, err := handleUdpPacket(header, headerRaw, payload, displayPacketQ, buf)
+    // _displayPacket, err := handleUdpPacket(header, headerRaw, payload, displayPacketQ, buf)
+    _displayPacket, err := handleUdpPacket(header, headerRaw, payload, buf)
 
     if (err != nil){
       log.Printf("Failed to parse UDP packet %v", err)
@@ -229,7 +228,7 @@ func HandleIpPacket(buf []byte, buf_len int, tun2EthQ chan Packet, displayPacket
 // }
 
 
-func ConnectionFromKnownClients(knownClients []config.KnownClient, udpSrcPort, udpDstPort uint16) (*ConnectionData, bool){
+func ConnectionFromKnownClients(knownClients []config.KnownClient, udpSrcPort, udpDstPort uint16, protoStr string) (*ConnectionData, bool){
   log.Printf("knownClients len: %v", len(knownClients));
   for i := 0; i < len(knownClients); i++ {
     knownClient := knownClients[i]
@@ -237,13 +236,17 @@ func ConnectionFromKnownClients(knownClients []config.KnownClient, udpSrcPort, u
     p2 := uint16(knownClient.Port2)
     ports_match := p1 == udpSrcPort && p2 == udpDstPort   
     backward_match := p2 == udpSrcPort && p1 == udpDstPort
-    log.Printf("checking kc: %v:%v", p1, p2);
-    log.Printf("against actual: %v:%v", udpSrcPort, udpDstPort);
-    log.Printf("ports_match: %v", ports_match);
-    log.Printf("proto_match: %v", knownClient.Protocol == "UDP");
+    proto_match := knownClient.Protocol == protoStr
+    // log.Printf("checking kc: %v:%v", p1, p2);
+    // log.Printf("against actual: %v:%v", udpSrcPort, udpDstPort);
+    // log.Printf("ports_match: %v", ports_match);
+    // log.Printf("!!!!!!!!backward_match: %v", backward_match);
+    // log.Printf("proto_match: %v", proto_match);
+    log.Printf("")
+    log.Printf("                    %v -> %v", udpSrcPort, udpDstPort);
   
     // todo mild refactor
-    if (ports_match || backward_match) && knownClient.Protocol == "UDP" {
+    if (ports_match || backward_match) && proto_match{
       srcIP := net.ParseIP(knownClient.IP1)
       dstIP := net.ParseIP(knownClient.IP2)
       if backward_match{ // if 2->1 rather than 1->2 which is assumed
@@ -276,9 +279,51 @@ type Change struct{
   Type string // enum? from "delay, corrupt, duplicate?"
 
 }
+func handleTcpPacket(ipHeader* ipv4.Header, ipHeaderRaw []byte, tcpRaw []byte, raw []byte) (*DisplayPacket, error){
+  tcpHeaderLen := (tcpRaw[12] >> 4) * 4 // TCP header length is specified in the first 4 bits of the 12th byte
+  // log.Printf("tcpRaw len: %v", len(tcpRaw))
+  tcpPayload := tcpRaw[tcpHeaderLen:]
+
+  tcpSrcPort := binary.BigEndian.Uint16(tcpRaw[0:2]) // Source port is the first 2 bytes
+  tcpDstPort := binary.BigEndian.Uint16(tcpRaw[2:4]) // Destination port is the next 2 bytes
+  hash := fmt.Sprintf("%s:%d-%d", "TCP", tcpSrcPort, tcpDstPort)
+  log.Printf("handleTcpPacket: hash: %v", hash)
+
+  var curConnection *ConnectionData = nil
+
+  nowMillis := time.Now().UnixMilli()
+  if connect, ok := PP.connections.Get(hash); ok {
+    curConnection = connect
+  } else {
+    connection, found := ConnectionFromKnownClients(config.Config.KnownClients, tcpSrcPort, tcpDstPort, "TCP")
+    if !found {
+      return nil, errors.New(fmt.Sprintf("Existing client not found for %d -> %d", tcpSrcPort, tcpDstPort))
+    }
+    curConnection = connection
+    PP.connections.Set(hash, curConnection)
+  }
+
+  updateIpUsingConnection(curConnection, ipHeader)
+  
+  // For TCP, checksum calculation is similar to UDP but involves the TCP header and payload
+  UpdateTcpChecksum(ipHeader, tcpRaw[:tcpHeaderLen], tcpPayload)
+
+  // Rest of the processing is similar to UDP
+  displayPacket := DisplayPacket{
+    Id: uuid.New().String(),
+    ConnectionId: curConnection.Id,
+    IpHeaderRaw: hex.EncodeToString(ipHeaderRaw),
+    L4HeaderRaw: hex.EncodeToString(tcpRaw[:tcpHeaderLen]),
+    L4PayloadRaw: hex.EncodeToString(tcpPayload),
+    Ts: nowMillis,
+    Manips: make([]Manipulation, 0),
+  }
+
+  return &displayPacket, nil
+}
 
 // header type is from golang.org/x/net/ipv4 btw
-func handleUdpPacket(ipHeader* ipv4.Header, ipHeaderRaw []byte, udpRaw []byte, displayPacketQ chan InfoUpdate, raw []byte) (*DisplayPacket, error){
+func handleUdpPacket(ipHeader* ipv4.Header, ipHeaderRaw []byte, udpRaw []byte, raw []byte) (*DisplayPacket, error){
 
   udpHeader := udpRaw[0:8] // 8 bytes of UDP header
   log.Printf("udpRaw len: %v", len(udpRaw))
@@ -295,7 +340,7 @@ func handleUdpPacket(ipHeader* ipv4.Header, ipHeaderRaw []byte, udpRaw []byte, d
   if connect, ok := PP.connections.Get(hash); ok {
     curConnection = connect
   } else {
-    connection, found := ConnectionFromKnownClients(config.Config.KnownClients, udpSrcPort, udpDstPort)
+    connection, found := ConnectionFromKnownClients(config.Config.KnownClients, udpSrcPort, udpDstPort, "UDP")
     // we will be mutating curConnection later which may or may not have race condition implications
     // with other packets coming in simultaneously and this being a struct referenced by the concurrency-safe
     // concurrent-map. But we are accesing this struct locally which i'm not sure if the concurrent-map 

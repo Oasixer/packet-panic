@@ -18,6 +18,7 @@ import { ByteLabelFormat } from "./ByteLabels";
 import ByteLabels from "./ByteLabels";
 import ToggleReadout from "@/Dashboard/General/Readout/ToggleReadout";
 import { height } from "@fortawesome/free-solid-svg-icons/fa0";
+import { getReadoutWidth } from "./RawPacketReadout";
 
 export type RawPacketSectionProps = {
   displayPacket: Signal<DisplayPacket>;
@@ -32,6 +33,8 @@ export default class RawPacketSection extends Component<RawPacketSectionProps> {
     const { displayPacket, fmtProp, swappable, byteLabels, title } = this.props;
     const l3PacketTypeMeta =
       displayPacket.value.proto === ProtoL3.UDP ? udpPacketMeta : tcpPacketMeta;
+
+    const byteReadoutValueWidth = getReadoutWidth(FmtTypePropName.hexFmt, 8);
     console.log("displayPacket.value.proto:", displayPacket.value.proto);
     return (
       <div
@@ -94,7 +97,10 @@ export default class RawPacketSection extends Component<RawPacketSectionProps> {
               />
             </div>
             {fmtProp.value !== FmtTypePropName.labelFmt && (
-              <div className="w-[42px] h-full flex flex-row justify-center items-center">
+              <div
+                style={{ maxWidth: byteReadoutValueWidth + "px" }}
+                className="h-full flex flex-row justify-center items-center"
+              >
                 <p className="font-monoCP text-white tracking-tighter w-fit h-[20px]">
                   ...
                 </p>

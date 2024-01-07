@@ -245,7 +245,7 @@ func PacketSender(conn *ipv4.RawConn, tun2EthQ chan Packet) error{
     packet := <-tun2EthQ
     packetSizeBytes := packet.ipHeader.TotalLen
 		lifetimeBytesSent += packetSizeBytes
-    log.Debug().Msgf("sending. payload_len: %d", len(packet.payload))
+    log.Debug().Msgf("sending. payload_len: %d to %v", len(packet.payload), packet.ipHeader.Dst)
     // send packet
     err := conn.WriteTo(packet.ipHeader, packet.payload, nil)
     if err != nil { // if connection is closed, exit nicely

@@ -12,3 +12,12 @@ import { JSX } from "preact";
 }
 
 export const addRow = ()
+
+
+
+Wireshark filter!
+ !dns && (udp || tcp) && !quic && !mdns && !ntp && (ip.host matches "69\.69\.69.*" ||  ip.host == 192.168.2.216)
+  !dns && (udp || tcp) && !quic && !mdns && !ntp && (ip.host matches "69\.69\.69.*" ||  ip.host == 192.168.2.216) && !(ip.host matches "^3.*" || ip.host matches "^14\..*" || ip.host matches "^5.*")
+
+
+!dns && (udp || tcp) && !quic && !mdns && !ntp && (ip.host matches "69\.69\.69.*" ||  ip.host == 192.168.2.216) && !(ip.host matches "^3.*" || ip.host matches "^14\..*" || ip.host matches "^5.*" || ip.host matches "^15.*" || ip.host matches "^172\.253.*")

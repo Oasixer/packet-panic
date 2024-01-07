@@ -20,10 +20,18 @@ export function splitBytes(
   fmtProp: FmtTypePropName,
   // tempOverride?: boolean,
 ): string[] {
+  if (hexString === undefined) {
+    console.log("hexString undefined for ", field.id);
+  }
   let dontSplitBytes =
     fmtProp === FmtTypePropName.labelFmt ||
     (fmtProp === FmtTypePropName.decFmt && !field.splitBytesInFmt) ||
     hexString.length === 1;
+
+  console.log(
+    "dont split bytes for " + hexString + ":" + field.id,
+    dontSplitBytes,
+  );
   if (dontSplitBytes) {
     return [hexString];
   }
@@ -41,7 +49,38 @@ export function splitBytes(
   return bytes;
 }
 
-export function getFieldValueByField(field: Field, headerRaw: string): string {
+export function getFieldValueByField(field: Field, headerRaw: string) {
+  // Convert the entire header raw data into a binary string
+  let binaryStr = "";
+  for (let i = 0; i < headerRaw.length; i += 2) {
+    const byte = parseInt(headerRaw.substring(i, i + 2), 16);
+    binaryStr += byte.toString(2).padStart(8, "0");
+  }
+
+  // Extract the specific field bits
+  const fieldBinaryStr = binaryStr.substring(
+    field.startBit,
+    field.startBit + field.lenBits,
+  );
+
+  // Convert the field binary string to a hex string
+  let hexStr = "";
+  for (let i = 0; i < fieldBinaryStr.length; i += 4) {
+    const nibbleBinary = fieldBinaryStr.substring(
+      i,
+      Math.min(i + 4, fieldBinaryStr.length),
+    );
+    hexStr += parseInt(nibbleBinary, 2).toString(16);
+  }
+
+  console.log("grabbed " + field.id + " :", hexStr);
+  return hexStr;
+}
+
+export function getFieldValueByField_old(
+  field: Field,
+  headerRaw: string,
+): string {
   const start = (field.startBit / 8) * 2;
   const end = start + field.lenBits / 4;
 
@@ -53,7 +92,10 @@ export function getFieldValueByField(field: Field, headerRaw: string): string {
     return nibble.toString(16);
   }
 
-  return headerRaw.substring(start, end);
+  const hexStr = headerRaw.substring(start, end);
+  console.log("grabbed " + field.id + " :", hexStr);
+
+  return hexStr;
 }
 
 export function getFieldValueById(
@@ -110,6 +152,10 @@ function udpLabelSubs(id: UdpHeaderField): string {
 
 function tcpLabelSubs(id: TcpHeaderField): string {
   switch (id) {
+    case TcpHeaderField.reserved:
+      return "reserv";
+    case TcpHeaderField.headerLen:
+      return "hlen";
     default:
       return id as unknown as string;
   }
@@ -393,7 +439,7 @@ export enum TcpHeaderField {
   headerLen = "headerLen",
   reserved = "reserved",
   flags = "flags",
-  window = "window",
+  windowSize = "windowSize",
   checksum = "checksum",
   urgentPointer = "urgentPointer",
   options = "options",
@@ -441,51 +487,51 @@ export const tcpHeaderFields: Field[][] = [
     {
       id: TcpHeaderField.reserved,
       startBit: 100,
-      lenBits: 4,
+      lenBits: 6,
       color: "#6BC1D7", // color6
     },
     {
       id: TcpHeaderField.flags,
-      startBit: 104,
-      lenBits: 8,
+      startBit: 106,
+      lenBits: 6,
       color: "#6165D7", // color7
     },
-  ],
-  [
     {
-      id: TcpHeaderField.window,
+      id: TcpHeaderField.windowSize, // The size of the receive window
       startBit: 112,
       lenBits: 16,
       color: "#A191FC", // color8
     },
+  ],
+  [
     {
       id: TcpHeaderField.checksum,
       startBit: 128,
       lenBits: 16,
       color: "#9A7AC1", // color9
     },
-  ],
-  [
     {
       id: TcpHeaderField.urgentPointer,
       startBit: 144,
       lenBits: 16,
       color: "#D392CD", // color10
     },
-    // Padding and options are variable in size. Adjust their startBit and lenBits accordingly.
-    {
-      id: TcpHeaderField.options,
-      startBit: 160, // Variable
-      lenBits: 0, // Variable
-      color: "#893F5E", // color11
-    },
-    {
-      id: TcpHeaderField.padding,
-      startBit: 160, // Variable
-      lenBits: 0, // Variable
-      color: "#557755", // Repeat color for padding
-    },
   ],
+  // [
+  //   // Padding and options are variable in size. Adjust their startBit and lenBits accordingly.
+  //   {
+  //     id: TcpHeaderField.options,
+  //     startBit: 160, // Variable
+  //     lenBits: 0, // Variable
+  //     color: "#893F5E", // color11
+  //   },
+  //   {
+  //     id: TcpHeaderField.padding,
+  //     startBit: 160, // Variable
+  //     lenBits: 0, // Variable
+  //     color: "#557755", // Repeat color for padding
+  //   },
+  // ],
 ];
 
 const l4PayloadFields: Field[][] = [

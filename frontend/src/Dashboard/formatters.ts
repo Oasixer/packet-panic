@@ -21,6 +21,9 @@ export function fmtTs(unixMillis) {
 }
 
 export function fmtIp(ipHex: string): string {
+  if (ipHex === undefined) {
+    return "UNDEF";
+  }
   // console.log("__IP: ", ipHex);
   if (ipHex.length !== 8) {
     console.log("INVALID_IP", ipHex);
@@ -36,18 +39,18 @@ export function fmtIp(ipHex: string): string {
   return decimalBytes.join(".");
 }
 
-export function fmtByteToDec(hexByte: string): string {
-  // if (hexByte.length > 2) {
-  //   console.log("INVALID_BYTE", hexByte);
-  //   return "INVALID_BYTE";
-  // }
-  return parseInt(hexByte, hexByte.length * 8).toString();
+export function fmtBytesToDec(hexBytes: string): string {
+  return parseInt(hexBytes, 16).toString();
 }
 
-export function fmtPort(portHex: string): string {
+export function fmt2BytesToDec(portHex: string): string {
+  if (portHex === undefined) {
+    return "UNDEF";
+  }
+
   if (portHex.length !== 4) {
     console.log("INVALID_PORT", portHex);
     return "INVALID_PORT";
   }
-  return parseInt(portHex, 32).toString();
+  return parseInt(portHex, 16).toString();
 }

@@ -1,5 +1,5 @@
 import { dashboardComponentSignals } from "./Dashboard";
-import { fmtByteToDec, fmtTs } from "./formatters";
+import { fmtBytesToDec, fmtTs } from "./formatters";
 export const PACKET_Q_LEN = 100;
 
 enum Styling {
@@ -20,10 +20,10 @@ export enum ProtoL3 {
   UDP = "UDP",
 }
 
-let totalNPackets = 0;
+let totalNPackets = 3;
 
 export function protoHexToStr(protoHex: string): string {
-  const protoDec = fmtByteToDec(protoHex);
+  const protoDec = fmtBytesToDec(protoHex);
   switch (protoDec) {
     case "17":
       return ProtoL3.UDP as string;
@@ -106,94 +106,96 @@ export function getPacketById_TODO_perf(
 //   packet: PacketData,
 // ) {}
 
-export let sampleConnections: ConnectionData[] = [];
-//   {
-//     id: 0,
-//     hashId: "x",
-//     nPackets: 1650,
-//     srcIP: "192.168.0.1",
-//     dstIP: "192.168.0.1",
-//     srcPort: "12345",
-//     dstPort: "8001",
-//     protocol: ProtoL3.TCP,
-//     // speedGBps: 69,
-//     // displayPackets: [],
-//     lastPacketTs: 0,
-//     packets: [
-//       {
-//         id: 0,
-//         packetNumLocal: 0,
-//         connectionId: 0,
-//         ipHeaderRaw: "455802381a2b0000030604d2c0a80105efffffff",
-//         l3HeaderRaw: "13881f91000e04d2aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-//         srcIP: "192.168.0.1",
-//         dstIP: "223.150.1.1",
-//         srcPort: "12345",
-//         dstPort: "8001",
-//         proto: ProtoL3.TCP,
-//         len: 456,
-//         ts: new Date().getTime(),
-//         tsFmt: fmtTs(new Date().getTime()),
-//         manips: [],
-//         saved: true,
-//       },
-//       {
-//         id: 2,
-//         packetNumLocal: 1,
-//         connectionId: 0,
-//         ipHeaderRaw: "455811111a2b0000030604d2c0a801051aaaaaaf",
-//         l3HeaderRaw: "13881f91000e04d2",
-//         srcIP: "224.168.0.1",
-//         dstIP: "192.168.0.1",
-//         srcPort: "12345",
-//         dstPort: "8001",
-//         proto: ProtoL3.TCP,
-//         len: 53,
-//         ts: new Date().getTime(),
-//         tsFmt: fmtTs(new Date().getTime()),
-//         manips: [],
-//         saved: false,
-//
-//         // lengthBytes:
-//       },
-//     ],
-//   },
-//   {
-//     id: 1,
-//     hashId: "y", // TODO: ...
-//     nPackets: 238,
-//     srcIP: "192.241.6.1",
-//     dstIP: "192.168.0.2",
-//     srcPort: "12345",
-//     dstPort: "6969",
-//     protocol: ProtoL3.UDP,
-//     // speedGBps: 0.42,
-//     // displayPackets: [],
-//     lastPacketTs: 0,
-//     packets: [
-//       {
-//         id: 1,
-//         packetNumLocal: 0,
-//         // packetNumLocal: 0,
-//         connectionId: 1,
-//         ipHeaderRaw: "455800151a2b0000031704d2c0a80105efffffff",
-//         l3HeaderRaw: "13881f91000e04d2",
-//         srcIP: "224.168.0.1",
-//         dstIP: "192.168.0.1",
-//         srcPort: "12345",
-//         dstPort: "8001",
-//         proto: ProtoL3.UDP,
-//         len: 520,
-//         ts: new Date().getTime(),
-//         tsFmt: fmtTs(new Date().getTime()),
-//         manips: [],
-//         saved: false,
-//
-//         // lengthBytes:
-//       },
-//     ],
-//   },
-// ];
+export let sampleConnections: ConnectionData[] = [
+  {
+    id: 0,
+    hashId: "x",
+    nPackets: 1650,
+    srcIP: "192.168.0.1",
+    dstIP: "192.168.0.1",
+    srcPort: "12345",
+    dstPort: "8001",
+    protocol: ProtoL3.TCP,
+    // speedGBps: 69,
+    // displayPackets: [],
+    lastPacketTs: 0,
+    packets: [
+      {
+        id: 0,
+        packetNumLocal: 0,
+        connectionId: 0,
+        ipHeaderRaw: "455802381a2b0000030604d2c0a80105efffffff",
+        l4HeaderRaw: "1b582379000004d20000a8ca5002040003f20000",
+        l4PayloadRaw: "1111111111",
+        srcIP: "192.168.0.1",
+        dstIP: "223.150.1.1",
+        srcPort: "12345",
+        dstPort: "8001",
+        proto: ProtoL3.TCP,
+        len: 456,
+        ts: new Date().getTime(),
+        tsFmt: fmtTs(new Date().getTime()),
+        manips: [],
+        saved: true,
+      },
+      {
+        id: 2,
+        packetNumLocal: 1,
+        connectionId: 0,
+        ipHeaderRaw: "455811111a2b0000030604d2c0a801051aaaaaaf",
+        l4HeaderRaw: "13881f91000e04d20000a8ca5002040003f20000",
+        l4PayloadRaw: "16161616",
+        srcIP: "224.168.0.1",
+        dstIP: "192.168.0.1",
+        srcPort: "12345",
+        dstPort: "8001",
+        proto: ProtoL3.TCP,
+        len: 53,
+        ts: new Date().getTime(),
+        tsFmt: fmtTs(new Date().getTime()),
+        manips: [],
+        saved: false,
+
+        // lengthBytes:
+      },
+    ],
+  },
+  {
+    id: 1,
+    hashId: "y", // TODO: ...
+    nPackets: 238,
+    srcIP: "192.241.6.1",
+    dstIP: "192.168.0.2",
+    srcPort: "12345",
+    dstPort: "6969",
+    protocol: ProtoL3.UDP,
+    // speedGBps: 0.42,
+    // displayPackets: [],
+    lastPacketTs: 0,
+    packets: [
+      {
+        id: 1,
+        packetNumLocal: 0,
+        connectionId: 1,
+        ipHeaderRaw: "455800151a2b0000031704d2c0a80105efffffff",
+        l4HeaderRaw: "13881f91000e04d2",
+        l4PayloadRaw: "16161616",
+        srcIP: "224.168.0.1",
+        dstIP: "192.168.0.1",
+        srcPort: "12345",
+        dstPort: "8001",
+        proto: ProtoL3.UDP,
+        len: 520,
+        ts: new Date().getTime(),
+        tsFmt: fmtTs(new Date().getTime()),
+        manips: [],
+        saved: false,
+
+        // lengthBytes:
+      },
+    ],
+  },
+];
 
 function getConnection(
   connections: ConnectionData[],

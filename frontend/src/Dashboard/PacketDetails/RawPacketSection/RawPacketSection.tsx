@@ -5,6 +5,7 @@ import { dashboardComponentSignals } from "@/Dashboard/Dashboard";
 import { Signal, signal } from "@preact/signals";
 import { DisplayPacket } from "@/Dashboard/connectionData";
 import RawPacketDisplay from "./RawPacketDisplay";
+import FlagDisplay from "./FlagDisplay";
 import { ByteLabelFormat } from "./ByteLabels";
 import { IpHeaderField, ipPacketMeta } from "@/Dashboard/packetTypes";
 import { FmtTypePropName, fmtOrDefault } from "@/Dashboard/formatters";
@@ -37,6 +38,9 @@ export default class RawPacketSection extends Component<RawPacketSectionProps> {
           byteLabels={ByteLabelFormat.names}
           title="Legend"
         />
+        {displayPacket.value.proto === "TCP" && (
+          <FlagDisplay displayPacket={displayPacket} />
+        )}
       </div>
     );
   }
