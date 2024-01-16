@@ -19,7 +19,7 @@ export default class ConnectionReadouts extends Component<ConnectionReadoutsProp
       <div className="flex flex-row gap-1 flex-wrap">
         <ToggleProp packetComputed={connectionData} propName="enabled" />
         <TextReadout propName="id" dataSignal={connectionData} />
-        <TextReadout propName="proto" dataSignal={connectionData} />
+        <TextReadout propName="protocol" dataSignal={connectionData} />
         <TextReadout propName="srcIP" dataSignal={connectionData} />
         <TextReadout propName="srcPort" dataSignal={connectionData} />
         <TextReadout propName="dstIP" dataSignal={connectionData} />
