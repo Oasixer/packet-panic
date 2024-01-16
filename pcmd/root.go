@@ -176,7 +176,7 @@ func Root(cmd *cobra.Command, args []string) {
 	infoUpdateQ := make(chan ppanic.InfoUpdate, 1)
 
 	// same conn used to forward packets btw
-	conn, err := net.ListenPacket("ip4:udp", "0.0.0.0")
+	conn, err := net.ListenPacket("ip4:tcp", "0.0.0.0")
 	if err != nil {
 		log.Fatal().Err(err).Msg("Error creating raw IPv4 connection")
 		return
@@ -189,10 +189,13 @@ func Root(cmd *cobra.Command, args []string) {
 		return
 	}
 
+	corrupterConfig := ppanic.NewCorruptorConfig(true, 0, 0, 0)
+	corrupter := ppanic.NewCorruptor(corrupterConfig)
 	// delayerConfig := ppanic.NewDelayerConfig(200*time.Millisecond, 800*time.Millisecond)
 	// delayer := ppanic.NewDelayer(delayerConfig)
 	manips := []ppanic.PacketManipulator{
 		// delayer,
+		corrupter,
 	}
 
 	eg.Go(func() error {

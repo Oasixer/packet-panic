@@ -35,6 +35,7 @@ type DelayerConfig struct{
 }
 
 type CorruptorConfig struct{
+  AdvanceFirstBitDebug bool `json:"AdvanceFirstBitDebug"`
   NumBitsToFlipPayload int `json:"numBitsToFlipPayload"`
   L3HeaderCorruptionProbability float32 `json:"l3HeaderCorruptionProbability"`
   L4HeaderCorruptionProbability float32 `json:"l4HeaderCorruptionProbability"`
@@ -93,8 +94,10 @@ func NewCorruptor(corruptorConfig* CorruptorConfig) *Corruptor {
   return &Corruptor{cfg: corruptorConfig, manip: nil}
 }
 
-func NewCorruptorConfig(numBitsToFlipPayload int, l3HeaderCorruptionProbability, l4HeaderCorruptionProbability float32 ) *CorruptorConfig {
-  return &CorruptorConfig{NumBitsToFlipPayload: numBitsToFlipPayload,
+func NewCorruptorConfig(advanceFirstBitDebug bool, numBitsToFlipPayload int, l3HeaderCorruptionProbability, l4HeaderCorruptionProbability float32) *CorruptorConfig {
+  return &CorruptorConfig{
+    AdvanceFirstBitDebug: advanceFirstBitDebug,
+    NumBitsToFlipPayload: numBitsToFlipPayload,
     L3HeaderCorruptionProbability: l3HeaderCorruptionProbability,
     L4HeaderCorruptionProbability: l4HeaderCorruptionProbability,
   }
@@ -157,6 +160,10 @@ func (c *Corruptor) DecideManipulations(packet *Packet, displayPacket *DisplayPa
   }
 
   payloadBitFlips := make([]PayloadBitFlip, c.cfg.NumBitsToFlipPayload)
+  // if (advanceFirstBitDebug){
+    // payload
+  // }
+
   for i := 0; i < c.cfg.NumBitsToFlipPayload; i++ {
     randByte := payloadStart + rand.Intn(len(packet.payload)-payloadStart)
     randBit := uint(rand.Intn(8))
@@ -245,7 +252,7 @@ func PacketSender(conn *ipv4.RawConn, tun2EthQ chan Packet) error{
     packet := <-tun2EthQ
     packetSizeBytes := packet.ipHeader.TotalLen
 		lifetimeBytesSent += packetSizeBytes
-    log.Debug().Msgf("sending. payload_len: %d to %v", len(packet.payload), packet.ipHeader.Dst)
+    log.Debug().Msgf("DEQUEUE from tun2EthQ! sending. payload_len: %d to %v", len(packet.payload), packet.ipHeader.Dst)
     // send packet
     err := conn.WriteTo(packet.ipHeader, packet.payload, nil)
     if err != nil { // if connection is closed, exit nicely

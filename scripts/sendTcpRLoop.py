@@ -173,43 +173,46 @@ psh_ack_tcp_header = struct.pack('!HHLLBBH', srcPort, dstPort, seqNum, ackNum, d
 sock.sendto(ip_header + psh_ack_tcp_header + data, (DST_IP, 0))
 print("ACK sent.")
 
-own_msg, _ = sock.recvfrom(BUFFER_SIZE)
-
-data, addr = sock.recvfrom(BUFFER_SIZE)
-print("recv final data")
-packetSrcIP = addr[0]
-recvDstIP_bytes = data[16:20]
-print(f'recv ip bytes: {recvDstIP_bytes}')
-recvDstIP = '.'.join(map(str, recvDstIP_bytes))
+while True:
+    try:
+        data, addr = sock.recvfrom(BUFFER_SIZE)
+        print("recv final data")
+        recvSrcIP = addr[0]
+        recvDstIP_bytes = data[16:20]
+        # print(f'recv ip bytes: {recvDstIP_bytes}')
+        recvDstIP = '.'.join(map(str, recvDstIP_bytes))
 
 # Extract the IP header length
-ip_header_len = (data[0] & 0x0F) * 4
+        ip_header_len = (data[0] & 0x0F) * 4
 
 # Extract the TCP header length
-tcp_header_start = ip_header_len
-tcp_header_len = (data[tcp_header_start + 12] >> 4) * 4
+        tcp_header_start = ip_header_len
+        tcp_header_len = (data[tcp_header_start + 12] >> 4) * 4
 
 # Extract the source and destination port
-recvSrcPort, recvDstPort = struct.unpack('!HH', data[tcp_header_start:tcp_header_start + 4])
+        recvSrcPort, recvDstPort = struct.unpack('!HH', data[tcp_header_start:tcp_header_start + 4])
 
 # Extract flags from the TCP header
-flags_offset = tcp_header_start + 13
-flags = data[flags_offset]  # The flags are located at the 14th byte of the TCP header
+        flags_offset = tcp_header_start + 13
+        flags = data[flags_offset]  # The flags are located at the 14th byte of the TCP header
 
-seqNum, ackNum = struct.unpack('!LL', data[tcp_header_start + 4:tcp_header_start + 12])
+        seqNum, ackNum = struct.unpack('!LL', data[tcp_header_start + 4:tcp_header_start + 12])
 
 # TCP flags
-FIN = flags & 0x01
-SYN = (flags & 0x02) >> 1
-RST = (flags & 0x04) >> 2
-PSH = (flags & 0x08) >> 3
-ACK = (flags & 0x10) >> 4
-URG = (flags & 0x20) >> 5
-ECE = (flags & 0x40) >> 6
-CWR = (flags & 0x80) >> 7
+        FIN = flags & 0x01
+        SYN = (flags & 0x02) >> 1
+        RST = (flags & 0x04) >> 2
+        PSH = (flags & 0x08) >> 3
+        ACK = (flags & 0x10) >> 4
+        URG = (flags & 0x20) >> 5
+        ECE = (flags & 0x40) >> 6
+        CWR = (flags & 0x80) >> 7
 
-print(f"Received flags: FIN={FIN}, SYN={SYN}, RST={RST}, PSH={PSH}, ACK={ACK}, URG={URG}, ECE={ECE}, CWR={CWR}")
-print(f"Source IP: {packetSrcIP}, Destination IP: {recvDstIP}")
-print(f"Source Port: {recvSrcPort}, Destination Port: {recvDstPort}")
-print(f"Sequence Number: {seqNum}, Acknowledgment Number: {ackNum}")
-sock.close()
+        print(f"Received flags: FIN={FIN}, SYN={SYN}, RST={RST}, PSH={PSH}, ACK={ACK}, URG={URG}, ECE={ECE}, CWR={CWR}")
+        print(f"Source IP: {recvSrcIP}, Destination IP: {recvDstIP}")
+        print(f"Source Port: {recvSrcPort}, Destination Port: {recvDstPort}")
+        print(f"Sequence Number: {seqNum}, Acknowledgment Number: {ackNum}")
+    except Exception as e:
+        print(f'Error: {e}')
+    finally:
+        sock.close()

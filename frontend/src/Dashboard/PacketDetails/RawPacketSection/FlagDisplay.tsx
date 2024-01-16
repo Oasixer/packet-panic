@@ -3,6 +3,8 @@ import { Signal } from "@preact/signals";
 import { DisplayPacket } from "@/Dashboard/connectionData";
 import { tcpPacketMeta, getFieldValueByField } from "@/Dashboard/packetTypes";
 import { fmtBytesToDec } from "@/Dashboard/formatters";
+import Readout from "@/Dashboard/General/Readout/Readout";
+import TextReadoutValue from "@/Dashboard/General/Readout/TextReadout/TextReadoutValue";
 
 export type FlagDisplayProps = {
   displayPacket: Signal<DisplayPacket>;
@@ -33,17 +35,12 @@ export default class FlagDisplay extends Component<FlagDisplayProps> {
 
     return (
       <div className="flex flex-col gap-1">
-        <h1>Flags</h1>
-        <table>
-          <tbody>
-            {flags.map((flag, index) => (
-              <tr key={index}>
-                <td>{flag.label}</td>
-                <td>{flag.value}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        {flags.map((flag, index) => (
+          <Readout
+            label={flag.label}
+            valueElement={<TextReadoutValue valueStr={flag.value} />}
+          />
+        ))}
       </div>
     );
   }

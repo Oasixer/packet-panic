@@ -119,6 +119,9 @@ type DisplayPacket struct {
   // Len int `json:"len"`
   Manips []Manipulation `json:"manips"`
 }
+func compareIPs(ip1, ip2 net.IP) bool {
+    return ip1.Equal(ip2)
+}
 
 func HandleIpPacket(buf []byte, buf_len int, tun2EthQ chan Packet, displayPacketQ chan InfoUpdate, manipulators []PacketManipulator) bool{
   // get the version xxxx0000 is the version in the first byte
@@ -132,6 +135,14 @@ func HandleIpPacket(buf []byte, buf_len int, tun2EthQ chan Packet, displayPacket
   if err != nil {
     log.Printf("Error parsing header")
     return false
+  }
+
+
+  log.Debug().Msgf("\nReceived IP msg. srcIP: %v, dstIP: %v", header.Src, header.Dst)
+  ip1 := net.ParseIP("69.69.69.1")
+  if compareIPs(header.Src, ip1){
+    log.Debug().Msgf("gonna do the replace")
+    // header.Src = net.ParseIP("192.168.2.216") 
   }
 
   // log.Printf("buf[:buf_len+5]: %v", buf[:buf_len])
@@ -203,15 +214,18 @@ func HandleIpPacket(buf []byte, buf_len int, tun2EthQ chan Packet, displayPacket
     ConnectionUpdates: connectionUpdates,
   }
 
+  log.Debug().Msgf("ENQUEUE into tun2ethQ!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+  tun2EthQ <- packet
+
   log.Debug().Msgf("\nPut infoUpdate in displayPacketQ: %v", infoUpdate)
   // enqueue the info before actually running delays etc.
   displayPacketQ <- infoUpdate
 
-  for _, manipulator := range manipulators {
-    manipulator.Manipulate(&packet, displayPacket)
-  }
+  // for _, manipulator := range manipulators {
+  //   manipulator.Manipulate(&packet, displayPacket)
+  // }
 
-  tun2EthQ <- packet
+
   return true
 }
 
@@ -254,7 +268,7 @@ func ConnectionFromKnownClients(knownClients []config.KnownClient, udpSrcPort, u
         dstIP = net.ParseIP(knownClient.IP1)
       }
       return &ConnectionData{
-        Id:  fmt.Sprintf("%s:%d-%d", "UDP", udpSrcPort, udpDstPort),
+        Id:  fmt.Sprintf("%s:%d-%d", knownClient.Protocol, udpSrcPort, udpDstPort),
         // Id: uuid.New().String(),
         NPackets: 1,
         SrcIP: srcIP,
@@ -271,7 +285,14 @@ func ConnectionFromKnownClients(knownClients []config.KnownClient, udpSrcPort, u
 }
 
 func updateIpUsingConnection(connection *ConnectionData, header* ipv4.Header){
-  header.Src = config.Config.IFaceAddr
+  // newIP := make(net.IP, len(config.Config.IFaceAddr))
+  // copy(newIP, config.Config.IFaceAddr)
+  //
+  // // Change the last byte to 2
+  // newIP[len(newIP)-1] = 2
+
+  // header.Src = config.Config.IFaceAddr
+  header.Src = header.Dst
   header.Dst = connection.DstIP
 }
 
@@ -328,6 +349,11 @@ func handleUdpPacket(ipHeader* ipv4.Header, ipHeaderRaw []byte, udpRaw []byte, r
   udpHeader := udpRaw[0:8] // 8 bytes of UDP header
   log.Printf("udpRaw len: %v", len(udpRaw))
   udpPayload := udpRaw[8:]
+  if udpPayload[0] == byte('x'){
+    udpPayload[0] = byte('y')
+  } else {
+    udpPayload[0] = byte('x')
+  }
   // log.Printf("len from handleUdpPacket: %v", len(udpRaw))
   
   udpSrcPort := binary.BigEndian.Uint16(udpHeader[0:2]) // Source port is the first 2 bytes

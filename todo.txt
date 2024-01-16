@@ -20,4 +20,14 @@ Wireshark filter!
   !dns && (udp || tcp) && !quic && !mdns && !ntp && (ip.host matches "69\.69\.69.*" ||  ip.host == 192.168.2.216) && !(ip.host matches "^3.*" || ip.host matches "^14\..*" || ip.host matches "^5.*")
 
 
-!dns && (udp || tcp) && !quic && !mdns && !ntp && (ip.host matches "69\.69\.69.*" ||  ip.host == 192.168.2.216) && !(ip.host matches "^3.*" || ip.host matches "^14\..*" || ip.host matches "^5.*" || ip.host matches "^15.*" || ip.host matches "^172\.253.*")
+!dns && (udp || tcp) && !quic && !mdns && !ntp && (ip.host matches "69\.69\.69.*" ||  ip.host == 192.168.2.216) && !(ip.host matches "^3.*" || ip.host matches "^14\..*" || ip.host matches "^5.*" || ip.host matches "^15.*" || ip.host matches "^172\..*")
+
+
+PP ONLY
+!dns && (udp || tcp) && !quic && !mdns && !ntp && (ip.src matches "69\.69\.69.*" && ip.dst == 192.168.2.216) || (ip.dst matches "69\.69\.69.*" && ip.src == 192.168.2.216) 
+
+PP OR self -> self
+ !dns && (udp || tcp) && !quic && !mdns && !ntp && ((ip.host matches "69\.69\.69.*" && ip.dst == 192.168.2.216) || (ip.host matches "69\.69\.69.*" && ip.src == 192.168.2.216) || (ip.src == 192.168.2.216 && ip.dst == 192.168.2.216))
+
+
+ !dns && (udp || tcp) && !quic && !mdns && !ntp && ((ip.host matches "69\.69\.69.*" && ip.dst == 127.0.0.1) || (ip.host matches "69\.69\.69.*" && ip.src == 127.0.0.1) || (ip.src == 127.0.0.1 && ip.dst == 127.0.0.1))

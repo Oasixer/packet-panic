@@ -9,6 +9,8 @@ import FlagDisplay from "./FlagDisplay";
 import { ByteLabelFormat } from "./ByteLabels";
 import { IpHeaderField, ipPacketMeta } from "@/Dashboard/packetTypes";
 import { FmtTypePropName, fmtOrDefault } from "@/Dashboard/formatters";
+import Accordion from "@/Dashboard/General/Accordion";
+import FlagIcon from "@/Dashboard/Icons/FlagIcon";
 
 export type RawPacketSectionProps = {
   displayPacket: Signal<DisplayPacket>;
@@ -19,6 +21,7 @@ export default class RawPacketSection extends Component<RawPacketSectionProps> {
   render() {
     const { displayPacket } = this.props;
     // const fmtProp = signal<FmtTypePropName>(FmtTypePropName.hexFmt);
+    const openFlagSignal = signal<boolean>(true);
     const mainFmtProp = signal<FmtTypePropName>(FmtTypePropName.hexFmt);
     const labelFmtProp = signal<FmtTypePropName>(FmtTypePropName.labelFmt);
 
@@ -39,7 +42,12 @@ export default class RawPacketSection extends Component<RawPacketSectionProps> {
           title="Legend"
         />
         {displayPacket.value.proto === "TCP" && (
-          <FlagDisplay displayPacket={displayPacket} />
+          <Accordion
+            title={"TCP Flags"}
+            icon={<FlagIcon />}
+            content={<FlagDisplay displayPacket={displayPacket} />}
+            openSignal={openFlagSignal}
+          />
         )}
       </div>
     );

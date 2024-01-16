@@ -20,6 +20,7 @@ export enum ProtoL3 {
   UDP = "UDP",
 }
 
+// let totalNPackets = 0;
 let totalNPackets = 3;
 
 export function protoHexToStr(protoHex: string): string {
@@ -106,6 +107,7 @@ export function getPacketById_TODO_perf(
 //   packet: PacketData,
 // ) {}
 
+export let _sampleConnections: ConnectionData[] = [];
 export let sampleConnections: ConnectionData[] = [
   {
     id: 0,
@@ -179,7 +181,7 @@ export let sampleConnections: ConnectionData[] = [
         connectionId: 1,
         ipHeaderRaw: "455800151a2b0000031704d2c0a80105efffffff",
         l4HeaderRaw: "13881f91000e04d2",
-        l4PayloadRaw: "16161616",
+        l4PayloadRaw: "161616",
         srcIP: "224.168.0.1",
         dstIP: "192.168.0.1",
         srcPort: "12345",

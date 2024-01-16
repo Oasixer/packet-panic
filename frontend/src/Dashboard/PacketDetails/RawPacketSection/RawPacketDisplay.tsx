@@ -96,19 +96,27 @@ export default class RawPacketSection extends Component<RawPacketSectionProps> {
                 fmtProp={fmtProp}
               />
             </div>
-            {fmtProp.value !== FmtTypePropName.labelFmt && (
-              <div
-                style={{ maxWidth: byteReadoutValueWidth + "px" }}
-                className="h-full flex flex-row justify-center items-center"
-              >
+            {fmtProp.value !== FmtTypePropName.labelFmt ? (
+              displayPacket.value.l4PayloadRaw.length > 6 ? (
+                <div
+                  style={{ maxWidth: byteReadoutValueWidth + "px" }}
+                  className="h-full flex flex-row justify-center items-center"
+                >
+                  <p className="font-monoCP text-white tracking-tighter w-fit h-[20px]">
+                    ...
+                  </p>
+                </div>
+              ) : (
                 <p className="font-monoCP text-white tracking-tighter w-fit h-[20px]">
-                  ...
+                  [{displayPacket.value.l4PayloadRaw.length / 2}B]
                 </p>
-              </div>
-            )}
-            {fmtProp.value === FmtTypePropName.labelFmt && (
-              <p className="font-monoCP text-sz4">
-                {l4PayloadMeta.rawHeaderLabel}
+              )
+            ) : (
+              <p
+                className="font-monoCP text-sz4"
+                /* eg. UDP Payload */
+              >
+                {`${displayPacket.value.proto} ${l4PayloadMeta.rawHeaderLabel}`}
               </p>
             )}
           </div>

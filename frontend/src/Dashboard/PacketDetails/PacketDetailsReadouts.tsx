@@ -47,12 +47,12 @@ export default class PacketDetailsReadouts extends Component<PacketDetailsReadou
           dataSignal={displayPacket}
           // fmt={protoHexToStr}
         />
-        <HeaderTextReadout
-          dataSignal={displayPacket}
-          propId={IpHeaderField.protocol}
-          packetTypeMeta={ipPacketMeta}
-          // fmt={protoHexToStr}
-        />
+        {/* <HeaderTextReadout */}
+        {/*   dataSignal={displayPacket} */}
+        {/*   propId={IpHeaderField.protocol} */}
+        {/*   packetTypeMeta={ipPacketMeta} */}
+        {/*   // fmt={protoHexToStr} */}
+        {/* /> */}
 
         <HeaderTextReadout
           dataSignal={displayPacket}

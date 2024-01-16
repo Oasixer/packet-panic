@@ -34,6 +34,16 @@ export function getReadoutWidth(
   nBits: number,
   field?: Field,
 ): number {
+  // rather jank code to handle 0-ish length payloads
+  if (
+    fmtProp === FmtTypePropName.labelFmt &&
+    field &&
+    field.id === "payload" &&
+    nBits < 32
+  ) {
+    // console.log("nBits:", nBits);
+    return getReadoutWidth(fmtProp, 32, field);
+  }
   // rather jank code to handle 6 bit fields
   // by calculating (((16 bit)-(4 bit)-(pad))-pad)/2
   if (field && field.lenBits === 6) {

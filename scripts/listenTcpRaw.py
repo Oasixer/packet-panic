@@ -1,9 +1,11 @@
+import os
 import socket
 import struct
 import sys
 
-HOST = '192.168.2.216'
-PORT = 9083
+# HOST = '192.168.2.216'
+HOST = '127.0.0.1'
+PORT = 8081
 
 def checksum(msg):
     s = 0
